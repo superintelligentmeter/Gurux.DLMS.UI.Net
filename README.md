@@ -10,7 +10,7 @@ License: **GPL-2.0-only**. The fork's contributions are distributed under the sa
 
 ![GXDLMSDirector companion application with multi-meter measurement tiles and a voltage trend](ui.png)
 
-*Development preview of the GXDLMSDirector companion application, built from the local working versions of the paired forks, showing simulated readings. No physical meters are connected. The dashboard source changes have not yet been published. The dashboard module belongs to Director; this UI library is not a separate dashboard application.*
+*The GXDLMSDirector companion application, built from the paired forks, showing simulated readings. No physical meters are connected. The dashboard module belongs to Director; this UI library is not a separate dashboard application.*
 
 ## Build with GXDLMSDirector
 
@@ -22,7 +22,7 @@ git clone https://github.com/superintelligentmeter/Gurux.DLMS.UI.Net.git
 dotnet build GXDLMSDirector/Development/GXDLMSDirector46.csproj -c Release -t:Rebuild
 ```
 
-Keep the directory names `GXDLMSDirector` and `Gurux.DLMS.UI.Net`; Director references this project. See the [Director README](https://github.com/superintelligentmeter/GXDLMSDirector#readme) for the dashboard development preview. The commands above build the currently published source.
+Keep the directory names `GXDLMSDirector` and `Gurux.DLMS.UI.Net`; Director references this project. See the [Director dashboard guide](https://github.com/superintelligentmeter/GXDLMSDirector/blob/master/DASHBOARDS.txt) for dashboard usage, autosave and optional feature switches.
 
 The protocol library remains the official Gurux.DLMS 9.0.2609.2201 NuGet package. This GPL dependency is not exempt from redistribution obligations merely because it is unmodified.
 
