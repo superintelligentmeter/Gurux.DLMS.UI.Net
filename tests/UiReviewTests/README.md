@@ -34,3 +34,11 @@ Combo captures preserve the requested scroll position around binding/native-size
 Register Activation supplies one assignment and Day/Night masks. The ActiveMasksCb checks require a standard native frame inside NativeComboHost, exercise a real selection commit, then refresh the whole object so clear/repopulate transient deselection cannot alter ActiveMask, leave it dirty, or open a modal error.
 
 The complete scalar-width and structured-area audit is documented in ../UiLayoutAudit.README.md. Its separate layout-only worker mode preserves the behavioral suites above.
+
+## Focused Activity Calendar audit
+
+Run `UiReviewTests.exe calendar <output> --timeout 90` against a frozen UI snapshot. It launches isolated workers for empty, populated and long-name models on every currently connected physical monitor. Each worker renders all six active/passive Season/Week/Day pages at 1100×760, 620×560 and restored 1100×760; extra scroll captures are retained when needed.
+
+The fixtures use distinct active/passive objects, two seasons, two weeks and two days with two scheduled actions each. Assertions cover original binding instances, exact refreshed names, same-view empty/populated/empty refreshes, selected-day action binding, field rails/fonts/colors, padded field height and native text viewport, and actual table row allocation. This catches skinny field wrappers even when their raw height equals the font height. The test also invokes nonmodal Remove buttons on disposable models, checks the correct collection and opposite-side isolation, and verifies access/dirty states. It does not invoke meter activation, Add/Edit modal dialogs, network transport or user preferences.
+
+Read `calendar-summary.json`, `regressions.json`, per-case `result.json` and the actual screenshots together. Unconnected 96 DPI displays are not simulated. Long ASCII values remain intact and use native text/list navigation; the matrix does not claim every protocol encoding, locale, keyboard path or meter response is covered.

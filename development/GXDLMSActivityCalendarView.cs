@@ -1,3 +1,4 @@
+﻿// superintelligentmeter contributors, 2026-10-30: use active week attribute 4 for week editing and removal. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
@@ -447,7 +448,7 @@ namespace Gurux.DLMS.UI
             GXDLMSWeekProfile item = new GXDLMSWeekProfile();
             GXDLMSWeekProfile[] list;
             GXDLMSDayProfile[] days;
-            if (index == 3)
+            if (index == 4)
             {
                 list = target.WeekProfileTableActive;
                 days = target.DayProfileTableActive;
@@ -485,7 +486,7 @@ namespace Gurux.DLMS.UI
         {
             GXDLMSWeekProfile item = (GXDLMSWeekProfile)li.Tag;
             GXDLMSDayProfile[] days;
-            if (index == 3)
+            if (index == 4)
             {
                 days = target.DayProfileTableActive;
             }
@@ -506,7 +507,7 @@ namespace Gurux.DLMS.UI
         private void RemoveWeekProfile(GXDLMSActivityCalendar target, int index, ListView lv)
         {
             List<GXDLMSWeekProfile> entries = new List<GXDLMSWeekProfile>();
-            if (index == 3)
+            if (index == 4)
             {
                 if (target.WeekProfileTableActive != null)
                 {
@@ -527,7 +528,7 @@ namespace Gurux.DLMS.UI
                 GXDLMSWeekProfile item = (GXDLMSWeekProfile)li.Tag;
                 li.Remove();
                 errorProvider1.SetError(lv, Properties.Resources.ValueChangedTxt);
-                if (index == 3)
+                if (index == 4)
                 {
                     Target.UpdateDirty(index, target.WeekProfileTableActive);
                 }
@@ -537,7 +538,7 @@ namespace Gurux.DLMS.UI
                 }
                 entries.Remove(item);
             }
-            if (index == 3)
+            if (index == 4)
             {
                 target.WeekProfileTableActive = entries.ToArray();
             }

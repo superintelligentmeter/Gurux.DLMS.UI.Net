@@ -16,9 +16,9 @@ using Gurux.DLMS.ManufacturerSettings;
 using Gurux.DLMS.Objects;
 using Gurux.DLMS.UI;
 
-// Offline visual/geometry audit. A worker has no transport, never clicks controls,
-// and only calls production presentation and binding APIs on in-memory models.
-internal static class Program
+// Offline visual/geometry audit. Workers have no transport. The focused Calendar
+// mode also invokes nonmodal local Remove actions on disposable in-memory models.
+internal static partial class Program
 {
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
     static readonly Assembly Ui = typeof(ModernPresentation).Assembly;
@@ -36,12 +36,13 @@ internal static class Program
     {
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
-        if (args.Length == 0) { Console.Error.WriteLine("Usage: UiReviewTests inventory|audit|regressions|behavior|roundtrip|sort-reference|clock-combo|all-combos OUTPUT [--filter NAME[,NAME]] [--timeout 30]"); return 64; }
+        if (args.Length == 0) { Console.Error.WriteLine("Usage: UiReviewTests inventory|audit|regressions|behavior|roundtrip|sort-reference|clock-combo|all-combos|calendar OUTPUT [--filter NAME[,NAME]] [--timeout 30]"); return 64; }
         try
         {
             if (args[0] == "worker") return Worker(args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4]) : -1, args.Length > 5 && args[5] == "combos", args.Length > 5 && args[5] == "layout");
             if (args[0] == "sort-reference-worker") return SortReferenceWorker(args[1], args[2]);
             if (args[0] == "clock-combo-worker") return ClockComboWorker(args[1], args[2]);
+            if (args[0] == "calendar-worker") return CalendarWorker(args[1], args[2], int.Parse(args[3]));
             var output = Path.GetFullPath(args.Length > 1 ? args[1] : "ui-review-artifacts");
             Directory.CreateDirectory(output);
             var inventory = Inventory();
@@ -51,6 +52,7 @@ internal static class Program
             if (args[0] == "inventory") return 0;
             if (args[0] == "sort-reference") return SortReferenceReview(output, inventory, args);
             if (args[0] == "clock-combo") return ClockComboReview(output, inventory, args);
+            if (args[0] == "calendar") return CalendarReview(output, inventory, args);
             if (!new[] { "audit", "regressions", "roundtrip", "behavior", "all-combos" }.Contains(args[0])) return 64;
             var filterIndex = Array.IndexOf(args, "--filter");
             var timeoutIndex = Array.IndexOf(args, "--timeout");

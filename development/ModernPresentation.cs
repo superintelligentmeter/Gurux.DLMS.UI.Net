@@ -1,3 +1,4 @@
+﻿// superintelligentmeter contributors, 2026-10-30: aligned Activity Calendar rows and responsive profile tables. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: consistent native combo presentation across object editors. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: native Clock base combo without a visible wrapper. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: measured full-width sort reference row. GPL-2.0-only; original notices retained.
@@ -215,104 +216,135 @@ namespace Gurux.DLMS.UI
 
         private static void ReflowActivityCalendar(Form form)
         {
-            var root = Find(form, "groupBox1");
-            var activeProfileTabs = Find(root, "tabControl2");
-            var passiveProfileTabs = Find(root, "tabControl3");
-            var outerRows = new (Label Label, Control Field)[]
+            var oldGroup = Find(form, "groupBox1");
+            var controls = Descendants(oldGroup).Where(control => !string.IsNullOrEmpty(control.Name))
+                .GroupBy(control => control.Name).ToDictionary(items => items.Key, items => items.First());
+            var calendars = (TabControl)controls["tabControl1"];
+            form.SuspendLayout();
+            try
             {
-                ((Label)Find(root, "LogicalNameLbl"), Find(root, "LogicalNameTB"))
-            };
-            var calendarRows = new (Label Label, Control Field)[]
-            {
-                ((Label)Find(root, "ACalendarNameLbl"), Find(root, "ACalendarNameTB")),
-                ((Label)Find(root, "PCalendarNameLbl"), Find(root, "PCalendarNameTB"))
-            };
-            bool arrangingCalendar = false;
-            void LayoutRows()
-            {
-                if (arrangingCalendar || root.IsDisposed) return;
-                arrangingCalendar = true;
-                try
+                form.AutoScaleMode = AutoScaleMode.Dpi;
+                form.Padding = new Padding(Scale(form, 16));
+                form.AutoScroll = true;
+                form.AutoScrollMinSize = Size.Empty;
+                var root = new TableLayoutPanel
                 {
-                    int outerLeft = Scale(root, 6);
-                    var activateLabel = (Label)Find(root, "ActivatePassiveCalendarLbl");
-                    int rail = Scale(root, EditorLayoutPolicy.LabelColumnWidth);
-                    int outerFieldLeft = outerLeft + rail;
-                    foreach (var label in outerRows.Select(row => row.Label).Append(activateLabel))
+                    Name = "groupBox1", Dock = DockStyle.Top, ColumnCount = 1, RowCount = 2,
+                    BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty
+                };
+                root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                form.Controls.Add(root);
+
+                TableLayoutPanel PropertyRows(Control parent, string name)
+                {
+                    var table = new TableLayoutPanel
                     {
-                        label.AutoSize = false;
-                        label.Size = new Size(rail - Scale(root, 12), Scale(root, 32));
-                        label.TextAlign = ContentAlignment.MiddleLeft;
-                    }
-                    int headerTop = Scale(root, 24);
-                    foreach (var (label, field) in outerRows)
-                    {
-                        label.Top = headerTop;
-                        headerTop += Scale(root, 40);
-                        label.Left = outerLeft;
-                        field.Left = outerFieldLeft;
-                        field.Top = label.Top - (field.Height - label.Height) / 2;
-                        field.Width = Math.Min(Scale(root, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(root, 110), root.ClientSize.Width - outerFieldLeft - Scale(root, 8)));
-                        field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                    }
-                    var activateField = Find(root, "ActivatePassiveCalendarTb");
-                    var activateButton = Find(root, "ActivatePassiveCalendarBtn");
-                    activateLabel.Left = outerLeft;
-                    activateLabel.Top = headerTop;
-                    var calendarTabs = Find(root, "tabControl1");
-                    calendarTabs.Top = activateLabel.Bottom + Scale(root, 8);
-                    calendarTabs.Height = Math.Max(Scale(root, 100), root.ClientSize.Height - calendarTabs.Top - Scale(root, 6));
-                    activateField.Left = outerFieldLeft;
-                    activateField.Top = activateLabel.Top - (activateField.Height - activateLabel.Height) / 2;
-                    activateField.Width = Math.Min(Scale(root, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(root, 100), root.ClientSize.Width - outerFieldLeft - Scale(root, 8)));
-                    activateField.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                    foreach (var (label, field) in calendarRows)
-                    {
-                        Control page = label.Parent!;
-                        // A hidden tab can still have its designer width. Recompute
-                        // after its own resize/show event, not only when the outer form resizes.
-                        if (page.ClientSize.Width < Scale(page, 280)) continue;
-                        int left = Scale(page, 8);
-                        int fieldLeft = left + Scale(page, EditorLayoutPolicy.LabelColumnWidth);
-                        label.AutoSize = false;
-                        label.Size = new Size(Scale(page, EditorLayoutPolicy.LabelColumnWidth - 12), Scale(page, 32));
-                        label.TextAlign = ContentAlignment.MiddleLeft;
-                        label.Left = left;
-                        field.Left = fieldLeft;
-                        field.Top = label.Top - (field.Height - label.Height) / 2;
-                        if (label.Name == "PCalendarNameLbl")
-                        {
-                            activateButton.Width = Scale(page, 100);
-                            activateButton.Height = Scale(page, 32);
-                            activateButton.Left = Math.Min(page.ClientSize.Width - Scale(page, 8), fieldLeft + Scale(page, EditorLayoutPolicy.FieldWidth)) - activateButton.Width;
-                            activateButton.Top = field.Top - Scale(page, 2);
-                            activateButton.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                            field.Width = Math.Max(Scale(page, 100), activateButton.Left - fieldLeft - Scale(page, 10));
-                            field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                            int profileTop = Math.Max(Scale(page, 38), activateButton.Bottom + Scale(page, 8));
-                            activeProfileTabs.Top = passiveProfileTabs.Top = profileTop;
-                            activeProfileTabs.Height = Math.Max(Scale(page, 100), activeProfileTabs.Parent.ClientSize.Height - profileTop - Scale(page, 6));
-                            passiveProfileTabs.Height = Math.Max(Scale(page, 100), page.ClientSize.Height - profileTop - Scale(page, 6));
-                        }
-                        else
-                        {
-                            field.Width = Math.Min(Scale(page, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(page, 100), page.ClientSize.Width - fieldLeft - Scale(page, 8)));
-                            field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                        }
-                    }
+                        Name = name, Dock = DockStyle.Top, AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 3, RowCount = 0,
+                        BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty
+                    };
+                    table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, EditorLayoutPolicy.LabelColumnWidth)));
+                    table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                    table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                    parent.Controls.Add(table);
+                    ConfigureCompactSurface(table);
+                    return table;
                 }
-                finally { arrangingCalendar = false; }
+
+                void Property(TableLayoutPanel table, string captionName, string fieldName, Control action = null)
+                {
+                    var caption = (Label)controls[captionName];
+                    int row = table.RowCount;
+                    CompactRow(table, caption.Text, controls[fieldName], action, actionWidth: action == null ? 0 : 100);
+                    // Retain the existing caption's name, typography and color too.
+                    var generated = (Label)table.GetControlFromPosition(0, row);
+                    generated.Name = caption.Name;
+                    generated.Font = caption.Font;
+                    generated.ForeColor = caption.ForeColor;
+                    caption.Parent.Controls.Remove(caption);
+                    caption.Dispose();
+                }
+
+                var metadata = PropertyRows(root, "ActivityCalendarProperties");
+                // Native tab pages inset their content by four logical pixels.
+                // These margins give all three property tables the same screen edge.
+                metadata.Margin = new Padding(Scale(form, 12), 0, Scale(form, 12), Scale(form, 8));
+                Section(metadata, "Activity Calendar");
+                Property(metadata, "LogicalNameLbl", "LogicalNameTB");
+                Property(metadata, "ActivatePassiveCalendarLbl", "ActivatePassiveCalendarTb");
+                calendars.Dock = DockStyle.Fill;
+                calendars.Margin = Padding.Empty;
+                root.Controls.Add(calendars, 0, 1);
+
+                foreach (var names in new[] {
+                    new[] { "ActiveTab", "tabControl2", "ACalendarNameLbl", "ACalendarNameTB" },
+                    new[] { "PassiveTab", "tabControl3", "PCalendarNameLbl", "PCalendarNameTB" } })
+                {
+                    var page = (TabPage)controls[names[0]];
+                    page.Padding = Padding.Empty;
+                    var body = new TableLayoutPanel
+                    {
+                        Name = names[0] + "Content", Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2,
+                        BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty
+                    };
+                    body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                    body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                    page.Controls.Add(body);
+                    var properties = PropertyRows(body, names[0] + "Properties");
+                    properties.Margin = new Padding(Scale(form, 8));
+                    Property(properties, names[2], names[3], names[0] == "PassiveTab" ? controls["ActivatePassiveCalendarBtn"] : null);
+                    var profiles = controls[names[1]];
+                    profiles.Dock = DockStyle.Fill;
+                    profiles.Margin = Padding.Empty;
+                    body.Controls.Add(profiles, 0, 1);
+                }
+
+                form.Controls.Remove(oldGroup);
+                oldGroup.Dispose();
+                bool fitting = false;
+                bool layoutPending = false;
+                void QueueLayout()
+                {
+                    if (layoutPending || !root.IsHandleCreated || root.IsDisposed) return;
+                    layoutPending = true;
+                    root.BeginInvoke((Action)(() =>
+                    {
+                        layoutPending = false;
+                        if (!root.IsDisposed) root.PerformLayout();
+                    }));
+                }
+                void FitHeight()
+                {
+                    if (fitting || root.IsDisposed || (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized) return;
+                    fitting = true;
+                    try
+                    {
+                        int header = metadata.GetPreferredSize(new Size(Math.Max(1, root.ClientSize.Width - metadata.Margin.Horizontal), 0)).Height;
+                        // Keep the profile editor usable at short heights; scroll the
+                        // surface instead of clipping its lists or editing commands.
+                        int height = Math.Max(form.ClientSize.Height - form.Padding.Vertical,
+                            header + metadata.Margin.Vertical + Scale(root, 280));
+                        if (root.Height != height)
+                        {
+                            root.Height = height;
+                            // SizeChanged can run inside a parent layout transaction.
+                            // Recompute percent rows once its cached bounds have settled.
+                            QueueLayout();
+                        }
+                    }
+                    finally { fitting = false; }
+                }
+                form.SizeChanged += (_, _) => FitHeight();
+                root.SizeChanged += (_, _) => FitHeight();
+                metadata.SizeChanged += (_, _) => FitHeight();
+                root.DpiChangedAfterParent += (_, _) => { FitHeight(); QueueLayout(); };
+                root.HandleCreated += (_, _) => QueueLayout();
+                FitHeight();
             }
-            foreach (Control page in calendarRows.Select(row => row.Label.Parent).Distinct())
-            {
-                page.SizeChanged += (_, _) => LayoutRows();
-                page.VisibleChanged += (_, _) => LayoutRows();
-                page.DpiChangedAfterParent += (_, _) => LayoutRows();
-            }
-            root.Resize += (_, _) => LayoutRows();
-            root.FontChanged += (_, _) => LayoutRows();
-            form.DpiChanged += (_, _) => LayoutRows();
-            LayoutRows();
+            finally { form.ResumeLayout(true); }
         }
 
         private static void StyleActivityCalendarSurfaces(Form form)
@@ -332,23 +364,10 @@ namespace Gurux.DLMS.UI
             }
             var controls = Descendants(group).Where(control => !string.IsNullOrEmpty(control.Name))
                 .GroupBy(control => control.Name).ToDictionary(items => items.Key, items => items.First());
-            foreach (var (name, left) in new[] { ("tabControl1", 6), ("tabControl2", 11), ("tabControl3", 11) })
-            {
-                var tabs = (TabControl)controls[name];
-                tabs.BackColor = white;
-                if (name == "tabControl1")
-                {
-                    tabs.Left = Scale(group, left);
-                    tabs.Width = group.ClientSize.Width - tabs.Left - Scale(group, 6);
-                }
-                else
-                {
-                    tabs.Left = Scale(tabs.Parent!, left);
-                    tabs.Width = tabs.Parent!.ClientSize.Width - tabs.Left - Scale(tabs, 10);
-                }
-                tabs.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            // The calendar and profile tabs are arranged by their layout tables.
+            // Do not apply the legacy anchored coordinates on top of that layout.
+            foreach (TabControl tabs in Descendants(group).OfType<TabControl>())
                 tabs.Resize += (_, _) => tabs.Invalidate();
-            }
             foreach (Panel panel in Descendants(group).OfType<Panel>().Where(panel => panel.Dock == DockStyle.Bottom))
             {
                 panel.BackColor = white;
@@ -370,6 +389,19 @@ namespace Gurux.DLMS.UI
             ConfigureDayProfile("DayProfilePassiveTab", "PassiveDaysList", "PassiveActionList", null, "panel6",
                 "AddDayPassiveBtn", "PassiveActionAddBtn", "DayProfilePassiveEditBtn", "DayProfilePassiveRemoveBtn");
 
+            void FitProfileColumns(ListView list, params int[] logicalMinimums)
+            {
+                if (list.Columns.Count != logicalMinimums.Length) return;
+                int[] widths = logicalMinimums.Select(value => Scale(list, value)).ToArray();
+                int available = Math.Max(0, list.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - Scale(list, 4));
+                int extra = Math.Max(0, available - widths.Sum());
+                // Names and references benefit most from extra space; numeric day
+                // and selector columns retain a predictable, readable width.
+                int flexible = list.Columns.Count == 8 ? 1 : list.Columns.Count;
+                for (int index = 0; index < widths.Length; ++index)
+                    list.Columns[index].Width = widths[index] + (index < flexible ? extra / flexible : 0);
+            }
+
             void ConfigureProfileList(string listName, string panelName, params string[] buttonNames)
             {
                 var list = (ListView)controls[listName];
@@ -389,6 +421,8 @@ namespace Gurux.DLMS.UI
                     list.Top = margin;
                     list.Width = Math.Max(Scale(list, 100), panel.Parent.ClientSize.Width - 2 * margin);
                     list.Height = Math.Max(Scale(list, 64), panelTop - list.Top - gap);
+                    FitProfileColumns(list, list.Columns.Count == 3 ? new[] { 120, 180, 120 }
+                        : new[] { 120, 64, 64, 64, 64, 64, 64, 64 });
                     var buttons = buttonNames.Select(name => (Button)controls[name]).ToArray();
                     int right = panel.ClientSize.Width - Scale(panel, 8);
                     foreach (Button button in buttons.Reverse())
@@ -433,6 +467,8 @@ namespace Gurux.DLMS.UI
                     actions.Top = margin;
                     actions.Width = Math.Max(Scale(page, 100), page.ClientSize.Width - margin - actions.Left);
                     actions.Height = bottom - margin;
+                    FitProfileColumns(days, 48);
+                    FitProfileColumns(actions, 100, 150, 100);
                     actions.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                     if (splitter != null)
                     {
