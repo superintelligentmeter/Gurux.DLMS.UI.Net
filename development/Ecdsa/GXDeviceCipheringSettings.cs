@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: resize ciphering controls as native rows and switch whole signing panels. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using Gurux.DLMS.ASN;
 using Gurux.DLMS.ASN.Enums;
@@ -509,6 +510,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            InitializeCipheringLayout();
             _address = address;
             _title = title;
             _keysPath = keysPath;
@@ -528,6 +530,42 @@ namespace Gurux.DLMS.UI.Ecdsa
             updateUI = true;
         }
 
+        private void InitializeCipheringLayout()
+        {
+            CipheringTab.SuspendLayout();
+            var common = CipheringLayout.Surface(CipheringTab);
+            CipheringLayout.Row(common, label1, SecuritySuiteCb);
+            CipheringLayout.Row(common, SecurityLbl, SecurityCB);
+            CipheringLayout.Row(common, SigningLbl, SigningCb);
+            CipheringLayout.Row(common, label7, SystemTitleTb, SystemTitleAsciiCb);
+            CipheringLayout.Row(common, UsePreEstablishedApplicationAssociations, ServerSystemTitleTb);
+            CipheringLayout.Row(common, BlockCipherKeyLbl, BlockCipherKeyTB, BlockCipherKeyAsciiCb);
+            CipheringLayout.Row(common, AuthenticationKey0Lbl, AuthenticationKeyTB, AuthenticationKeyAsciiCb);
+            CipheringLayout.Row(common, BroadcastKeyLbl, BroadcastKeyTb, BroadcastKeyAsciiCb);
+            CipheringLayout.Span(common, IgnoreSNRM);
+            CipheringLayout.Span(common, CipheringLayout.Actions(ClientCertificateBtn));
+
+            var suite0 = CipheringLayout.Surface(Cipheringv0);
+            CipheringLayout.Row(suite0, DedicatedKeyLbl, DedicatedKeyTb, DedicatedKeyAsciiCb);
+            CipheringLayout.Row(suite0, ChallengeLbl, ChallengeTB);
+            CipheringLayout.Span(suite0, CipheringLayout.Actions(GenerateDedicatedKeyBtn));
+
+            var client = CipheringLayout.Surface(groupBox1);
+            CipheringLayout.Row(client, label3, ClientSigningKeysCb, ClientSigningKeysInfoBtn);
+            CipheringLayout.Row(client, label4, ClientAgreementKeysCb, ClientAgreementKeyInfoBtn);
+            var server = CipheringLayout.Surface(groupBox2);
+            CipheringLayout.Row(server, label6, ServerSigningKeysCb, ServerSigningKeyInfoBtn);
+            CipheringLayout.Row(server, label5, ServerAgreementKeysCb, ServerAgreementKeyInfoBtn);
+            var suite1 = CipheringLayout.Surface(Cipheringv1);
+            CipheringLayout.Span(suite1, groupBox1);
+            CipheringLayout.Span(suite1, groupBox2);
+            CipheringLayout.Span(suite1, SignInitiateRequestResponseCb);
+            CipheringLayout.Span(suite1, CipheringLayout.Actions(UpdateBtn));
+
+            CipheringLayout.HostSuites(tabControl1, CipheringTab, CipheringPanel, Cipheringv0, Cipheringv1, CipheringV0Tab, CipheringV1Tab);
+            CipheringLayout.Span(common, CipheringPanel);
+            CipheringTab.ResumeLayout(true);
+        }
         public TabPage GetCiphetingTab()
         {
             return CipheringTab;
@@ -1355,47 +1393,11 @@ namespace Gurux.DLMS.UI.Ecdsa
 
         private void SigningCb_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Signing selected = (Signing)SigningCb.SelectedItem;
-            if (selected == Signing.None)
-            {
-                while (Cipheringv1.Controls.Count == 0)
-                {
-                    while (CipheringPanel.Controls.Count != 0)
-                    {
-                        Control ctr = CipheringPanel.Controls[0];
-                        ctr.Visible = false;
-                        Cipheringv1.Controls.Add(ctr);
-                    }
-                }
-                while (Cipheringv0.Controls.Count != 0)
-                {
-                    Control ctr = Cipheringv0.Controls[0];
-                    CipheringPanel.Controls.Add(ctr);
-                    ctr.Visible = true;
-                }
-            }
-            else
-            {
-                //Static unified model doesn't use signing key.
-                ClientSigningKeysCb.Enabled = ServerSigningKeysCb.Enabled = selected != Signing.StaticUnifiedModel;
-                //General signing doesn't use agreement key.
-                ClientAgreementKeysCb.Enabled = ServerAgreementKeysCb.Enabled = selected != Signing.GeneralSigning;
-                while (Cipheringv0.Controls.Count == 0)
-                {
-                    while (CipheringPanel.Controls.Count != 0)
-                    {
-                        Control ctr = CipheringPanel.Controls[0];
-                        ctr.Visible = false;
-                        Cipheringv0.Controls.Add(ctr);
-                    }
-                }
-                while (Cipheringv1.Controls.Count != 0)
-                {
-                    Control ctr = Cipheringv1.Controls[0];
-                    CipheringPanel.Controls.Add(ctr);
-                    ctr.Visible = true;
-                }
-            }
+            if (!(SigningCb.SelectedItem is Signing selected)) return;
+            // Preserve which key types each signing mode permits.
+            ClientSigningKeysCb.Enabled = ServerSigningKeysCb.Enabled = selected != Signing.StaticUnifiedModel;
+            ClientAgreementKeysCb.Enabled = ServerAgreementKeysCb.Enabled = selected != Signing.GeneralSigning;
+            CipheringLayout.ShowSuite(CipheringPanel, Cipheringv0, Cipheringv1, selected == Signing.None);
         }
 
         private void BroadcastKeyAsciiCb_CheckedChanged(object sender, EventArgs e)

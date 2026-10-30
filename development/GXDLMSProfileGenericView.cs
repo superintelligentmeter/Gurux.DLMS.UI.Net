@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: bind sort-object references without changing the protocol model. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -375,6 +376,7 @@ namespace Gurux.DLMS.UI
                 RemoveBtn.Visible = AddWhiteBtn.Visible = AddBlackBtn.Visible = false;
             }
             target = (GXDLMSProfileGeneric)value;
+            SortObjectReference.UpdateReference(target);
             structures = false;
             GXDLMSObject obj;
             if (target != null)
@@ -505,6 +507,12 @@ namespace Gurux.DLMS.UI
 
         public void OnValueChanged(GXDLMSViewArguments arg)
         {
+            // Attribute 6 is an object reference; render its identity and indices
+            // directly instead of routing it through the generic structure editor.
+            if (arg.Index == 6)
+            {
+                SortObjectReference.UpdateReference(target);
+            }
             if (arg.Index == 2)
             {
                 if (!arg.User)

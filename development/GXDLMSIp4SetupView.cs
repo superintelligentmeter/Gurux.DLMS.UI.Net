@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -141,31 +142,31 @@ namespace Gurux.DLMS.UI
             switch (index)
             {
                 case 2:
-                    errorProvider1.SetError(DataLinkLayerTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(DataLinkLayerTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 3:
-                    errorProvider1.SetError(IPAddressTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(IPAddressTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 4:
-                    errorProvider1.SetError(MulticastIPAddressTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(MulticastIPAddressTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 5:
-                    errorProvider1.SetError(IPOptionsTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(IPOptionsTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 6:
-                    errorProvider1.SetError(SubnetMaskTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(SubnetMaskTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 7:
-                    errorProvider1.SetError(GatewayIPAddressTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(GatewayIPAddressTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 8:
-                    errorProvider1.SetError(UseDhcpCp, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(UseDhcpCp, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 9:
-                    errorProvider1.SetError(PrimaryDNSAddressTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(PrimaryDNSAddressTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 10:
-                    errorProvider1.SetError(SecondaryDNSAddressTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(SecondaryDNSAddressTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 default:
                     errorProvider1.Clear();

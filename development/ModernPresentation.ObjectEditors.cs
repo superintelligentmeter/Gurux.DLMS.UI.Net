@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: native dropdown layout without redundant frames. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Gurux.DLMS.UI
         // The remaining objects in the owner's configuration, in navigation order.
         // Existing bound controls, containers and event handlers remain the same instances.
         private static readonly HashSet<string> RemainingModels = new HashSet<string>((
-            "GXDLMSAssociationShortName GXDLMSSapAssignment GXDLMSImageTransfer GXDLMSIECLocalPortSetup " +
+            "GXDLMSAssociationShortName GXDLMSSapAssignment GXDLMSImageTransfer GXDLMSIECLocalPortSetup GXDLMSIECOpticalPortSetup " +
             "GXDLMSRegisterMonitor GXDLMSActionSchedule GXDLMSHdlcSetup GXDLMSIecTwistedPairSetup " +
             "GXDLMSMBusSlavePortSetup GXDLMSUtilityTables GXDLMSModemConfiguration GXDLMSAutoAnswer " +
             "GXDLMSAutoConnect GXDLMSDataProtection GXDLMSPushSetup GXDLMSTcpUdpSetup GXDLMSIp4Setup " +
@@ -393,15 +394,14 @@ namespace Gurux.DLMS.UI
             }
             else if (control is ComboBox combo)
             {
-                combo.FlatStyle = FlatStyle.Flat;
+                combo.FlatStyle = FlatStyle.Standard;
                 combo.BackColor = Color.FromArgb(245, 247, 251);
-                var frame = new ModernFieldFrame(combo, combo.BackColor)
+                var comboMargin = control.Margin;
+                var frame = new NativeComboHost(combo)
                 {
-                    Dock = DockStyle.Fill, Margin = control.Margin,
-                    MaximumSize = new Size(0, Scale(table, 32)),
-                    Padding = new Padding(Scale(table, 4), Scale(table, 2), Scale(table, 4), Scale(table, 2))
+                    Dock = DockStyle.Fill, Margin = comboMargin,
+                    MaximumSize = new Size(0, Scale(table, 32))
                 };
-                combo.Dock = DockStyle.Top;
                 combo.Margin = Padding.Empty;
                 control = frame;
             }

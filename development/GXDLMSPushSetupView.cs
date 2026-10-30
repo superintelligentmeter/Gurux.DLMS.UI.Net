@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: keep the service selector read-only with the rest of the push destination. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -176,7 +177,7 @@ namespace Gurux.DLMS.UI
             }
             else if (arg.Index == 3)
             {
-                MessageCB.Enabled = MessageCB.Enabled = enabled;
+                ServiceCB.Enabled = MessageCB.Enabled = enabled;
                 DestinationTB.ReadOnly = !enabled;
             }
             else if (arg.Index == 4)

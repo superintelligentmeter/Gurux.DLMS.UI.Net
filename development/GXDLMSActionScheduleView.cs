@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -160,14 +161,14 @@ namespace Gurux.DLMS.UI
             switch (index)
             {
                 case 2:
-                    errorProvider1.SetError(ScriptNameTB, Properties.Resources.ValueChangedTxt);
-                    errorProvider1.SetError(ScriptSelectorTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ScriptNameTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
+                    errorProvider1.SetError(ScriptSelectorTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 3:
-                    errorProvider1.SetError(ScriptTypeTb, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ScriptTypeTb, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 4:
-                    errorProvider1.SetError(Time, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(Time, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 default:
                     errorProvider1.Clear();

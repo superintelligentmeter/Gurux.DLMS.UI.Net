@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: retain the Unix time action in shared responsive rows instead of beneath a stretched value. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -56,6 +57,32 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            if (System.ComponentModel.LicenseManager.UsageMode != System.ComponentModel.LicenseUsageMode.Designtime)
+            {
+                InitializePresentation();
+            }
+        }
+
+        private void InitializePresentation()
+        {
+            SuspendLayout();
+            try
+            {
+                var table = ModernPresentation.CompactSurface(this);
+                Controls.Add(table);
+                ModernPresentation.Section(table, "Unix time");
+                ModernPresentation.CompactRow(table, "Description", DescriptionTB);
+                ModernPresentation.CompactRow(table, "OBIS code", LogicalNameTB);
+                ModernPresentation.CompactButton(UpdateTimeBtn);
+                ModernPresentation.CompactRow(table, "Unix (UTC) time", ValueTB, UpdateTimeBtn);
+                Controls.Remove(groupBox1);
+                groupBox1.Dispose();
+                ModernPresentation.Apply(this);
+            }
+            finally
+            {
+                ResumeLayout(true);
+            }
         }
 
         #region IGXDLMSView Members

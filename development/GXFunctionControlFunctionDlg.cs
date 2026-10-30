@@ -1,3 +1,5 @@
+// Modified by Superintelligent Meter contributors, 2026-10-29: retain visible function-selection and dialog actions. GPL-2.0-only; existing notices retained.
+// superintelligentmeter, 2026-10-29: preserve standard Enter/Escape dialog actions. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -56,6 +58,9 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            NativeDialogFooter.FunctionEditor(this, IndexLbl, NameTb, EnabledLbl, EnabledCB, ScriptLbl, TargetTb, AddBtn, FunctionListView, RemoveBtn, OkBtn, CancelBtn);
+            AcceptButton = OkBtn;
+            CancelButton = CancelBtn;
             Target = target;
             NameTb.Text = name;
             if (index == 2)

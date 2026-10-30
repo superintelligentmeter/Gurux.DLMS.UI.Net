@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-29: keep native fields and dialog actions inside measured rows. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -52,6 +53,7 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            NativeDialogLayout.Apply(this);
             _target = target;
             _set = set;
             foreach (var it in target.Parent.GetObjects(ObjectType.ScriptTable))

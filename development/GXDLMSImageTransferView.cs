@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -566,22 +567,22 @@ namespace Gurux.DLMS.UI
             switch (index)
             {
                 case 2:
-                    errorProvider1.SetError(ImageBlockSizeTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImageBlockSizeTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 3:
-                    errorProvider1.SetError(ImageTransferredBlocksStatusTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImageTransferredBlocksStatusTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 4:
-                    errorProvider1.SetError(ImageFirstNotTransferredBlockNumberTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImageFirstNotTransferredBlockNumberTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 5:
-                    errorProvider1.SetError(ImageTransferEnabledCB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImageTransferEnabledCB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 6:
-                    errorProvider1.SetError(ImageTransferStatusTb, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImageTransferStatusTb, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 7:
-                    errorProvider1.SetError(ImagesView, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ImagesView, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 default:
                     errorProvider1.Clear();

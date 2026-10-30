@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -316,31 +317,31 @@ namespace Gurux.DLMS.UI
             switch (index)
             {
                 case 2:
-                    errorProvider1.SetError(ACalendarNameTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ACalendarNameTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 3:
-                    errorProvider1.SetError(SeasonProfileActiveLV, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(SeasonProfileActiveLV, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 4:
-                    errorProvider1.SetError(AWeekProfileLV, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(AWeekProfileLV, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 5:
-                    errorProvider1.SetError(ActiveDaysList, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ActiveDaysList, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 6:
-                    errorProvider1.SetError(PCalendarNameTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(PCalendarNameTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 7:
-                    errorProvider1.SetError(SeasonProfilePassiveLV, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(SeasonProfilePassiveLV, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 8:
-                    errorProvider1.SetError(PWeekProfileLV, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(PWeekProfileLV, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 9:
-                    errorProvider1.SetError(PassiveDaysList, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(PassiveDaysList, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 10:
-                    errorProvider1.SetError(ActivatePassiveCalendarTb, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(ActivatePassiveCalendarTb, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 default:
                     errorProvider1.Clear();

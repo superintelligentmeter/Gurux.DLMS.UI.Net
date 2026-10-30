@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: dedicated read-only sort reference. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using System;
 using System.Windows.Forms;
@@ -51,7 +52,7 @@ namespace Gurux.DLMS.UI
         private NumericUpDown ReadLastTB;
         private GroupBox groupBox3;
         private Label label3;
-        private GXValueField SortObjectTB;
+        private GXObjectReferenceView SortObjectReference;
         private Label label4;
         private GXValueField SortModeTB;
         private Label label5;
@@ -105,7 +106,7 @@ namespace Gurux.DLMS.UI
             this.CaptureBtn = new Gurux.DLMS.UI.GXButton();
             this.ResetBtn = new Gurux.DLMS.UI.GXButton();
             this.CapturePeriodTB = new Gurux.DLMS.UI.GXValueField();
-            this.SortObjectTB = new Gurux.DLMS.UI.GXValueField();
+            this.SortObjectReference = new Gurux.DLMS.UI.GXObjectReferenceView();
             this.SortModeTB = new Gurux.DLMS.UI.GXValueField();
             this.EntriesTB = new Gurux.DLMS.UI.GXValueField();
             this.EntriesInUseTB = new Gurux.DLMS.UI.GXValueField();
@@ -163,7 +164,7 @@ namespace Gurux.DLMS.UI
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.label3);
-            this.groupBox3.Controls.Add(this.SortObjectTB);
+            this.groupBox3.Controls.Add(this.SortObjectReference);
             this.groupBox3.Controls.Add(this.label4);
             this.groupBox3.Controls.Add(this.SortModeTB);
             this.groupBox3.Location = new System.Drawing.Point(3, 193);
@@ -594,18 +595,14 @@ namespace Gurux.DLMS.UI
             this.CapturePeriodTB.TabStop = false;
             this.CapturePeriodTB.Type = Gurux.DLMS.Enums.ValueFieldType.TextBox;
             // 
-            // SortObjectTB
-            // 
-            this.SortObjectTB.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.SortObjectTB.Index = 6;
-            this.SortObjectTB.Location = new System.Drawing.Point(294, 18);
-            this.SortObjectTB.Name = "SortObjectTB";
-            this.SortObjectTB.NotifyChanges = false;
-            this.SortObjectTB.ReadOnly = true;
-            this.SortObjectTB.Size = new System.Drawing.Size(172, 20);
-            this.SortObjectTB.TabIndex = 15;
-            this.SortObjectTB.TabStop = false;
-            this.SortObjectTB.Type = Gurux.DLMS.Enums.ValueFieldType.TextBox;
+            // SortObjectReference
+            //
+            this.SortObjectReference.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.SortObjectReference.Location = new System.Drawing.Point(294, 18);
+            this.SortObjectReference.Name = "SortObjectReference";
+            this.SortObjectReference.Size = new System.Drawing.Size(172, 20);
+            this.SortObjectReference.TabIndex = 15;
+            this.SortObjectReference.TabStop = false;
             // 
             // SortModeTB
             // 

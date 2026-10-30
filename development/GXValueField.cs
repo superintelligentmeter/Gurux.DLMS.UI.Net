@@ -1,3 +1,5 @@
+// superintelligentmeter contributors, 2026-10-30: native dropdown layout without redundant frames. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-29: expose presentation changes and structured-value scrolling. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -271,6 +273,7 @@ namespace Gurux.DLMS.UI
                 {
                     dataGridView1.CellValueChanged += OnCellValueChanged;
                 }
+                UpdateModernPresentationType();
             }
         }
 
@@ -782,6 +785,9 @@ namespace Gurux.DLMS.UI
                     }
                     dataGridView1.ReadOnly = att != null && (att.Access & AccessMode.Write) == 0;
                 }
+                textBox1.ScrollBars = textBox1.Multiline ? ScrollBars.Both : ScrollBars.None;
+                textBox1.WordWrap = !textBox1.Multiline;
+                PresentationLayoutChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 

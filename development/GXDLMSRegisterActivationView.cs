@@ -1,3 +1,4 @@
+// Modified 2026-10-30: preserve active mask during list refresh deselection. GPL-2.0-only.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -302,6 +303,9 @@ namespace Gurux.DLMS.UI
             try
             {
                 GXDLMSRegisterActivation target = (GXDLMSRegisterActivation)Target;
+                // Ignore the transient deselection while a read refresh rebuilds the list.
+                if (ActiveMasksCb.SelectedIndex < 0 || ActiveMasksCb.SelectedIndex >= target.MaskList.Count)
+                    return;
                 target.ActiveMask = target.MaskList[ActiveMasksCb.SelectedIndex].Key;
                 errorProvider1.SetError(ActiveMasksCb, Properties.Resources.ValueChangedTxt);
                 Target.UpdateDirty(4, target.ActiveMask);

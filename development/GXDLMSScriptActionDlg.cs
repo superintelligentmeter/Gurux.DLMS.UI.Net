@@ -1,3 +1,4 @@
+// Modified by Superintelligent Meter contributors, 2026-10-29: separate measured dialog actions from editor content. GPL-2.0-only; existing notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -54,6 +55,7 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
             foreach (DataType it in Enum.GetValues(typeof(DataType)))
             {
                 if (it != DataType.None && it != DataType.Array && it != DataType.Structure)

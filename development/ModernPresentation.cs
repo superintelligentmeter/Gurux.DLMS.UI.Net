@@ -1,3 +1,7 @@
+// superintelligentmeter contributors, 2026-10-30: consistent native combo presentation across object editors. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-30: native Clock base combo without a visible wrapper. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-30: measured full-width sort reference row. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-29: responsive editor rows and structured-value sizing. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using System;
 using System.Collections.Generic;
@@ -817,18 +821,19 @@ namespace Gurux.DLMS.UI
             form.ForeColor = Ink;
             form.AutoScroll = true;
             form.Padding = new Padding(Scale(form, 16));
-            form.AutoScrollMinSize = new Size(Scale(form, 552), 0);
+            form.AutoScrollMinSize = Size.Empty;
             var table = new TableLayoutPanel
             {
                 Name = "ModernContent", Dock = DockStyle.Top, AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = includeActionColumn ? 3 : 2,
-                MaximumSize = new Size(Scale(form, 800), 0), MinimumSize = new Size(Scale(form, 520), 0),
+                MaximumSize = new Size(Scale(form, 800), 0), MinimumSize = Size.Empty,
                 Padding = new Padding(0, 0, 24, 12), BackColor = Color.White
             };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 144)));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             if (includeActionColumn)
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            ConfigureCompactSurface(table);
             return table;
         }
 
@@ -850,11 +855,12 @@ namespace Gurux.DLMS.UI
         {
             int row = table.RowCount++;
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(table, height)));
-            table.Controls.Add(new Label
+            var caption = new Label
             {
                 Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
                 ForeColor = Muted, Margin = new Padding(0, 0, 12, 0), AutoSize = false
-            }, 0, row);
+            };
+            table.Controls.Add(caption, 0, row);
             field.Dock = DockStyle.Fill;
             var fieldMargin = new Padding(0, 4, 0, 4);
             field.Margin = fieldMargin;
@@ -867,11 +873,11 @@ namespace Gurux.DLMS.UI
             {
                 textBox.BorderStyle = BorderStyle.None;
                 textBox.BackColor = Color.FromArgb(245, 247, 251);
-                textBox.Dock = DockStyle.Top;
+                textBox.Dock = textBox.Multiline ? DockStyle.Fill : DockStyle.Top;
                 textBox.Margin = Padding.Empty;
                 var frame = new ModernFieldFrame(textBox, textBox.BackColor)
                 {
-                    Dock = DockStyle.Fill, Padding = new Padding(8, 7, 8, 5), Margin = fieldMargin
+                    Dock = DockStyle.Fill, Padding = new Padding(8, 7, 8, 5), Margin = fieldMargin, TabIndex = field.TabIndex
                 };
                 cell = frame;
             }
@@ -883,13 +889,17 @@ namespace Gurux.DLMS.UI
                 combo.BackColor = Color.FromArgb(245, 247, 251);
                 combo.Dock = DockStyle.Top;
                 combo.Margin = Padding.Empty;
-                cell = new ModernFieldFrame(combo, combo.BackColor)
+                cell = new NativeComboHost(combo)
                 {
-                    Dock = DockStyle.Fill, Padding = new Padding(0, 2, 0, 2), Margin = fieldMargin
+                    Dock = DockStyle.Fill, Margin = fieldMargin
                 };
             }
-            table.Controls.Add(cell, 1, row);
-            if (action == null) table.SetColumnSpan(cell, table.ColumnCount - 1);
+            if (action == null)
+            {
+                table.Controls.Add(cell, 1, row);
+                table.SetColumnSpan(cell, table.ColumnCount - 1);
+                if (field is GXValueField adaptive) ConfigureValueRow(table, row, caption, adaptive, height);
+            }
             else
             {
                 if (table.ColumnCount < 3)
@@ -907,7 +917,11 @@ namespace Gurux.DLMS.UI
                         button.MinimumSize = button.MaximumSize = button.Size;
                     }
                 }
-                table.Controls.Add(action, 2, row);
+                var actionRow = new CompactActionRow(table, row, cell, action, height) { TabIndex = row * 2 };
+                table.Controls.Add(actionRow, 1, row);
+                table.SetColumnSpan(actionRow, table.ColumnCount - 1);
+                caption.TextAlign = ContentAlignment.TopLeft;
+                caption.Padding = new Padding(0, Scale(table, 12), 0, 0);
             }
         }
 
@@ -967,7 +981,6 @@ namespace Gurux.DLMS.UI
             CompactRow(table, "", zone, height: 32);
             CompactRow(table, "Status", controls["StatusTB"], height: 120);
             var clockBase = (GXValueField)controls["ClockBaseTB"];
-            clockBase.ConfigureCompactCombo();
             CompactRow(table, "Clock base", clockBase, height: 34);
             clockBase.Margin = new Padding(0, 2, 0, 2);
             Section(table, "Daylight saving");
@@ -1023,7 +1036,7 @@ namespace Gurux.DLMS.UI
                 form.AutoScaleMode = AutoScaleMode.Dpi;
                 form.Font = BodyFont;
                 form.BackColor = Color.White;
-                var root = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White,
+                var root = new TableLayoutPanel { Name = "ProfileGenericContent", Dock = DockStyle.Top, BackColor = Color.White,
                     Padding = new Padding(Scale(form, 16)), ColumnCount = 1, RowCount = 0 };
                 root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
                 form.Controls.Add(root);
@@ -1042,8 +1055,8 @@ namespace Gurux.DLMS.UI
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 100)));
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-                string[] names = { "LogicalNameTB", "CapturePeriodTB", "EntriesInUseTB", "EntriesTB", "SortModeTB", "SortObjectTB" };
-                string[] labels = { "Logical Name", "Period", "Entries in use", "Entries", "Sort mode", "Sort object" };
+                string[] names = { "LogicalNameTB", "CapturePeriodTB", "EntriesInUseTB", "EntriesTB", "SortModeTB" };
+                string[] labels = { "Logical Name", "Period", "Entries in use", "Entries", "Sort mode" };
                 for (int row = 0; row < 3; ++row) metadata.RowStyles.Add(new RowStyle(SizeType.Percent, 33.333f));
                 for (int i = 0; i < names.Length; ++i)
                 {
@@ -1057,6 +1070,20 @@ namespace Gurux.DLMS.UI
                     metadata.Controls.Add(field, column + 1, i / 2);
                 }
                 Add(metadata, SizeType.Absolute, Scale(form, 120));
+                // The reference has its own full-width row. Its native selectable
+                // text wraps and the row follows its measured height at each DPI.
+                var reference = (GXObjectReferenceView)controls["SortObjectReference"];
+                var referenceRow = new TableLayoutPanel { Name = "SortObjectRow", ColumnCount = 2, RowCount = 1, BackColor = Color.White };
+                referenceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 112)));
+                referenceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                referenceRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                referenceRow.Controls.Add(new Label { Text = "Sort object", Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.TopLeft, Padding = new Padding(0, Scale(form, 10), 0, 0), ForeColor = Muted }, 0, 0);
+                reference.Dock = DockStyle.Fill;
+                reference.Margin = new Padding(0, Scale(form, 4), Scale(form, 8), Scale(form, 4));
+                referenceRow.Controls.Add(reference, 1, 0);
+                int referenceRowIndex = root.RowCount;
+                Add(referenceRow, SizeType.Absolute, Scale(form, 40));
                 var reading = new TableLayoutPanel { ColumnCount = 4, RowCount = 4, BackColor = Color.White };
                 reading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 112)));
                 reading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -1086,9 +1113,12 @@ namespace Gurux.DLMS.UI
                     }
                 }
                 Add(reading, SizeType.Absolute, Scale(form, 128));
+                bool IsMinimized() => (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized;
                 void AlignProfileColumns()
                 {
+                    if (IsMinimized() || root.ClientSize.Width < Scale(form, 150)) return;
                     bool narrow = root.ClientSize.Width < Scale(form, 720);
+                    referenceRow.ColumnStyles[0].Width = Scale(form, narrow ? 90 : 112);
                     foreach (var table in new[] { metadata, reading })
                     {
                         table.ColumnStyles[0].Width = Scale(form, narrow ? 90 : 112);
@@ -1142,7 +1172,84 @@ namespace Gurux.DLMS.UI
                 var captureFooter = Footer("ColumnAddBtn", "ColumnEditBtn", "ColumnRemoveBtn");
                 capturePage.Controls.Add(captureFooter);
                 list.BringToFront();
-                Add(Footer("ResetBtn", "CaptureBtn", "AddWhiteBtn", "AddBlackBtn", "RemoveBtn"), SizeType.AutoSize, 0);
+                var actions = Footer("ResetBtn", "CaptureBtn", "AddWhiteBtn", "AddBlackBtn", "RemoveBtn");
+                Add(actions, SizeType.AutoSize, 0);
+                // Fixed metadata plus wrapping actions must not consume the data
+                // area. Keep several rows visible and let the outer editor scroll.
+                form.AutoScroll = true;
+                bool fitting = false;
+                void FitProfileHeight()
+                {
+                    if (fitting || root.IsDisposed || IsMinimized() || root.ClientSize.Width < Scale(form, 150)) return;
+                    fitting = true;
+                    try
+                    {
+                        int contentWidth = Math.Max(1, root.ClientSize.Width - root.Padding.Horizontal);
+                        int fixedHeight = (int)Math.Ceiling(root.RowStyles.Cast<RowStyle>().Where(style => style.SizeType == SizeType.Absolute).Sum(style => style.Height));
+                        int minimum = fixedHeight + Scale(root, 220) + root.Padding.Vertical + actions.GetPreferredSize(new Size(contentWidth, 0)).Height;
+                        int height = Math.Max(form.ClientSize.Height - form.Padding.Vertical, minimum);
+                        if (root.Height != height) root.Height = height;
+                    }
+                    finally { fitting = false; }
+                }
+                form.SizeChanged += (_, _) => FitProfileHeight();
+                root.SizeChanged += (_, _) => FitProfileHeight();
+                root.DpiChangedAfterParent += (_, _) => FitProfileHeight();
+                actions.SizeChanged += (_, _) => FitProfileHeight();
+                bool fittingReference = false;
+                void FitReferenceHeight()
+                {
+                    if (fittingReference || reference.IsDisposed || IsMinimized()) return;
+                    fittingReference = true;
+                    try
+                    {
+                        // Use the settled row width, not a child's transient width
+                        // while TableLayoutPanel is arranging or the host is minimized.
+                        AlignProfileColumns();
+                        int width = referenceRow.ClientSize.Width - (int)referenceRow.ColumnStyles[0].Width - reference.Margin.Horizontal;
+                        if (width < Scale(form, 80)) return;
+                        int height = reference.GetPreferredSize(new Size(width, 0)).Height + reference.Margin.Vertical;
+                        height = Math.Max(Scale(form, 40), height);
+                        if (Math.Abs(root.RowStyles[referenceRowIndex].Height - height) > 1)
+                            root.RowStyles[referenceRowIndex].Height = height;
+                        FitProfileHeight();
+                    }
+                    finally { fittingReference = false; }
+                }
+                // Coalesce notifications until the native layout/DPI transaction
+                // finishes. Updating a parent row inside its child's OnLayout can
+                // otherwise retain the height measured at an intermediate width.
+                bool referenceLayoutPending = false;
+                void QueueReferenceLayout()
+                {
+                    if (referenceLayoutPending || form.IsDisposed || !form.IsHandleCreated) return;
+                    referenceLayoutPending = true;
+                    form.BeginInvoke((Action)(() =>
+                    {
+                        referenceLayoutPending = false;
+                        if (form.IsDisposed || root.IsDisposed) return;
+                        FitReferenceHeight();
+                    }));
+                }
+                reference.ContentSizeChanged += (_, _) => QueueReferenceLayout();
+                referenceRow.SizeChanged += (_, _) => QueueReferenceLayout();
+                reference.DpiChangedAfterParent += (_, _) => QueueReferenceLayout();
+                form.SizeChanged += (_, _) => QueueReferenceLayout();
+                root.SizeChanged += (_, _) => QueueReferenceLayout();
+                Form layoutHost = null;
+                void HostResized(object sender, EventArgs args) => QueueReferenceLayout();
+                void TrackLayoutHost()
+                {
+                    if (layoutHost != null) layoutHost.Resize -= HostResized;
+                    layoutHost = form.TopLevelControl as Form;
+                    if (layoutHost != null) layoutHost.Resize += HostResized;
+                    QueueReferenceLayout();
+                }
+                form.ParentChanged += (_, _) => TrackLayoutHost();
+                form.HandleCreated += (_, _) => TrackLayoutHost();
+                form.Disposed += (_, _) => { if (layoutHost != null) layoutHost.Resize -= HostResized; };
+                TrackLayoutHost();
+                FitReferenceHeight();
                 form.Controls.Remove(group);
                 group.Dispose();
             }
@@ -1310,11 +1417,14 @@ namespace Gurux.DLMS.UI
                 activeLabel.TextAlign = ContentAlignment.MiddleLeft;
                 activeLabel.ForeColor = Muted;
                 activeLabel.Margin = new Padding(0, 0, Scale(page, 12), 0);
-                activeMask.Dock = DockStyle.Fill;
-                activeMask.Margin = new Padding(0, Scale(page, 4), 0, Scale(page, 4));
-                activeMask.FlatStyle = FlatStyle.Flat;
+                activeMask.FlatStyle = FlatStyle.Standard;
+                var activeMaskHost = new NativeComboHost(activeMask)
+                {
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(0, Scale(page, 4), 0, Scale(page, 4))
+                };
                 layout.Controls.Add(activeLabel, 0, 0);
-                layout.Controls.Add(activeMask, 1, 0);
+                layout.Controls.Add(activeMaskHost, 1, 0);
             }
 
             list.Dock = DockStyle.Fill;
@@ -1511,55 +1621,80 @@ namespace Gurux.DLMS.UI
 
     public partial class GXValueField
     {
+        internal event EventHandler PresentationLayoutChanged;
+        internal bool RequiresStructuredLayout => Type == Gurux.DLMS.Enums.ValueFieldType.Xml || (Type == Gurux.DLMS.Enums.ValueFieldType.TextBox && textBox1.Multiline);
         private bool modernPresentation;
         private bool compactPresentation;
-        private bool compactFlushCombo;
-        private bool suppressModernBorder;
+        private bool spaciousPresentation;
+        private bool arrangingNativeCombo;
+        private bool NativeComboPresentation => modernPresentation && Type == Gurux.DLMS.Enums.ValueFieldType.CompoBox;
 
         internal void ApplyModernStyle(bool spacious = false, bool compact = false)
         {
             bool first = !modernPresentation;
             modernPresentation = true;
             compactPresentation |= compact;
+            spaciousPresentation |= spacious;
             SetStyle(ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            BackColor = SystemInformation.HighContrast ? SystemColors.Window : compactFlushCombo && !comboBox1.Enabled
-                ? SystemColors.Control : Color.FromArgb(245, 247, 251);
-            // Legacy editors have 20px fields. Only add padding in the reflowed editors.
-            if (spacious) Padding = new Padding(12, 10, 12, 7);
-            else if (compact) Padding = new Padding(8, 6, 8, 4);
+            if (first)
+            {
+                foreach (Control child in Controls)
+                {
+                    child.Enter += (_, _) => Invalidate();
+                    child.Leave += (_, _) => Invalidate();
+                }
+                comboBox1.FontChanged += (_, _) => PerformLayout();
+            }
+            UpdateModernPresentationType();
+        }
+
+        // Binding can switch the same field between scalar, enum and structured
+        // values. Derive appearance from the current editor, never a sticky flag.
+        private void UpdateModernPresentationType()
+        {
+            if (!modernPresentation) return;
+            BackColor = NativeComboPresentation ? Parent?.BackColor ?? Color.White
+                : SystemInformation.HighContrast ? SystemColors.Window : Color.FromArgb(245, 247, 251);
+            Padding = NativeComboPresentation ? Padding.Empty : compactPresentation ? new Padding(8, 6, 8, 4)
+                : spaciousPresentation ? new Padding(12, 10, 12, 7) : Padding.Empty;
             textBox1.BorderStyle = BorderStyle.None;
             textBox1.BackColor = BackColor;
             textBox1.ForeColor = SystemInformation.HighContrast ? SystemColors.WindowText : ModernPresentation.Ink;
             textBox1.Dock = textBox1.Multiline ? DockStyle.Fill : DockStyle.Top;
-            if (first)
-                foreach (Control child in Controls)
-                {
-                    child.Enter += (s, e) => Invalidate();
-                    child.Leave += (s, e) => Invalidate();
-                }
-            // Keep a recognizable native arrow and border, including read-only
-            // fields such as Profile Generic's Sort mode.
             comboBox1.FlatStyle = FlatStyle.Standard;
+            PerformLayout();
             Invalidate();
         }
 
-        internal void ConfigureCompactCombo()
+        protected override void OnParentChanged(EventArgs e)
         {
-            compactFlushCombo = true;
-            suppressModernBorder = true;
-            Padding = new Padding(0, 2, 0, 2);
+            base.OnParentChanged(e);
+            UpdateModernPresentationType();
         }
 
         protected override void OnLayout(LayoutEventArgs e)
         {
+            if (NativeComboPresentation && comboBox1 != null)
+            {
+                if (arrangingNativeCombo) return;
+                arrangingNativeCombo = true;
+                try
+                {
+                    BackColor = Parent?.BackColor ?? Color.White;
+                    Padding = Padding.Empty;
+                    comboBox1.Dock = DockStyle.None;
+                    base.OnLayout(e);
+                    ModernPresentation.LayoutNativeCombo(comboBox1, ClientRectangle);
+                }
+                finally { arrangingNativeCombo = false; }
+                return;
+            }
             if (modernPresentation && textBox1 != null)
                 textBox1.Dock = textBox1.Multiline ? DockStyle.Fill : DockStyle.Top;
             if (compactPresentation)
             {
-                var inset = compactFlushCombo ? new Padding(0, 2, 0, 2) : Type == Gurux.DLMS.Enums.ValueFieldType.CompoBox
-                    ? new Padding(8, 2, 8, 2) : new Padding(8, 6, 8, 4);
+                var inset = new Padding(8, 6, 8, 4);
                 if (Padding != inset) Padding = inset;
-                comboBox1.Dock = DockStyle.Top;
             }
             base.OnLayout(e);
         }
@@ -1567,9 +1702,9 @@ namespace Gurux.DLMS.UI
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            if (!modernPresentation || suppressModernBorder) return;
-            using (var pen = new Pen(SystemInformation.HighContrast ? SystemColors.WindowText : ContainsFocus ? ModernPresentation.Accent : ModernPresentation.Line))
-                e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+            if (!modernPresentation || NativeComboPresentation) return;
+            using var pen = new Pen(SystemInformation.HighContrast ? SystemColors.WindowText : ContainsFocus ? ModernPresentation.Accent : ModernPresentation.Line);
+            e.Graphics.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
         }
     }
 }

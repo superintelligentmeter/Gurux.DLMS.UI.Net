@@ -15,6 +15,8 @@ namespace Gurux.DLMS.UI.Ecdsa
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            // superintelligentmeter, 2026-10-30: keep actions separate after native typography and DPI changes.
+            NativeDialogFooter.Apply(this, OKBtn, CancelBtn);
         }
 
         public GXPkcs8 Key

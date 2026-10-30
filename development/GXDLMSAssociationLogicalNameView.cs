@@ -1,3 +1,5 @@
+// Modified 2026-10-30: constrain Association tabs to their available viewport. GPL-2.0-only.
+// superintelligentmeter, 2026-10-29: preserve live conformance feedback and keep password actions visible at narrow widths. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -262,7 +264,7 @@ namespace Gurux.DLMS.UI
                 Margin = Padding.Empty, Padding = Padding.Empty };
             var right = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill, AutoSize = true, Margin = Padding.Empty, Padding = Padding.Empty,
+                Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = Padding.Empty,
                 FlowDirection = FlowDirection.LeftToRight, WrapContents = false
             };
             void SizeFooterButton(Button button)
@@ -316,7 +318,9 @@ namespace Gurux.DLMS.UI
                 var valueColumn = new ColumnStyle(SizeType.Absolute, ScaleFor(this, 260));
                 root.ColumnStyles.Add(labelColumn);
                 root.ColumnStyles.Add(valueColumn);
-                root.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                // Keep spanning tab content within the viewport instead of letting its
+                // preferred width expand an AutoSize column after a narrow resize.
+                root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
                 ModernPresentation.Section(root, groupBox1.Text.Replace("  ", " "));
                 var versionField = new FlowLayoutPanel
                 {
@@ -395,14 +399,15 @@ namespace Gurux.DLMS.UI
             ModernPresentation.Section(table, "Password actions");
             var passwordActions = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill, AutoSize = true, Margin = Padding.Empty,
+                Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty,
                 Padding = Padding.Empty, WrapContents = true
             };
             ModernPresentation.CompactButton(UpdatePwBtn);
             ModernPresentation.CompactButton(UpdateHighPwBtn);
             passwordActions.Controls.Add(UpdatePwBtn);
             passwordActions.Controls.Add(UpdateHighPwBtn);
-            ModernPresentation.CompactRow(table, "", passwordActions, height: 48);
+            // Let wrapping increase the row height instead of clipping the second action.
+            AddFullWidthRow(table, passwordActions);
             ModernPresentation.Section(table, "Security");
             ModernPresentation.CompactRow(table, SecuritySetupReferenceLbl.Text, SecuritySetupCb);
             groupBox2.Dispose();
@@ -1320,7 +1325,8 @@ namespace Gurux.DLMS.UI
                     }
                     GXDLMSAssociationLogicalName target = Target as GXDLMSAssociationLogicalName;
                     target.XDLMSContextInfo.Conformance = c;
-                    errorProvider1.SetError(LNSettings, Properties.Resources.ValueChangedTxt);
+                    // The legacy group was replaced by the responsive conformance grid.
+                    errorProvider1.SetError(sender as Control ?? GeneralProtectionCB, Properties.Resources.ValueChangedTxt);
                     Target.UpdateDirty(5, target.XDLMSContextInfo);
                 }
                 catch (Exception ex)

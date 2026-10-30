@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: align register layout and terminology with shared responsive editors. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -74,21 +75,16 @@ namespace Gurux.DLMS.UI
             SuspendLayout();
             try
             {
-                // This view has no inline field actions. Use the full editor column
-                // and slightly tighter horizontal insets to avoid a needless
-                // horizontal scroll bar at the standard object-pane width.
+                // Share the responsive editor surface and scalar/structured value sizing.
                 var table = ModernPresentation.CompactSurface(this, includeActionColumn: false);
-                Padding = new Padding(8);
-                table.Padding = new Padding(table.Padding.Left, table.Padding.Top, 0, table.Padding.Bottom);
-                AutoScrollMinSize = new Size(table.MinimumSize.Width, 0);
                 Controls.Add(table);
-                ModernPresentation.Section(table, groupBox1.Text);
-                ModernPresentation.CompactRow(table, LogicalNameLbl.Text, LogicalNameTB);
-                ModernPresentation.CompactRow(table, ScalerLbl.Text, ScalerTB);
-                ModernPresentation.CompactRow(table, UnitLbl.Text, UnitTB);
-                ModernPresentation.CompactRow(table, StatusLbl.Text, StatusTB);
-                ModernPresentation.CompactRow(table, CaptureTimeLbl.Text, CaptureTimeTB);
-                ModernPresentation.CompactRow(table, ValueLbl.Text, ValueTB, height: 100);
+                ModernPresentation.Section(table, "Extended Register");
+                ModernPresentation.CompactRow(table, "OBIS code", LogicalNameTB);
+                ModernPresentation.CompactRow(table, "Value", ValueTB);
+                ModernPresentation.CompactRow(table, "Scaler", ScalerTB);
+                ModernPresentation.CompactRow(table, "Unit", UnitTB);
+                ModernPresentation.CompactRow(table, "Status", StatusTB);
+                ModernPresentation.CompactRow(table, "Capture time", CaptureTimeTB);
                 ModernPresentation.CompactButton(ResetBtn);
                 var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
                 actions.Controls.Add(ResetBtn);

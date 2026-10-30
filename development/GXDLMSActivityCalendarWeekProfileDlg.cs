@@ -48,6 +48,8 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            // superintelligentmeter, 2026-10-30: keep actions separate after native typography and DPI changes.
+            NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
             Target = target;
             AsciiBtn.Checked = GXHelpers.IsAscii(Target.Name);
             NameTb.Text = GXHelpers.GetString(Target.Name);

@@ -1,3 +1,5 @@
+// superintelligentmeter, 2026-10-29: align labels/insets with the shared responsive register editors. GPL-2.0-only; original notices retained.
+// superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -73,21 +75,18 @@ namespace Gurux.DLMS.UI
                 // Reflow the legacy fixed-position controls into the same compact,
                 // bounded editor surface used by the Register views.
                 var table = ModernPresentation.CompactSurface(this, includeActionColumn: false);
-                Padding = new Padding(8);
-                table.Padding = new Padding(table.Padding.Left, table.Padding.Top, 0, table.Padding.Bottom);
-                AutoScrollMinSize = new System.Drawing.Size(table.MinimumSize.Width, 0);
                 Controls.Add(table);
-                ModernPresentation.Section(table, groupBox1.Text);
-                ModernPresentation.CompactRow(table, LogicalNameLbl.Text, LogicalNameTB);
-                ModernPresentation.CompactRow(table, ValueLbl.Text, CAValueTB);
-                ModernPresentation.CompactRow(table, LAValueLbl.Text, LAValueTB);
-                ModernPresentation.CompactRow(table, ScalerLbl.Text, ScalerTB);
-                ModernPresentation.CompactRow(table, UnitLbl.Text, UnitTB);
-                ModernPresentation.CompactRow(table, StatusLbl.Text, StatusTB);
-                ModernPresentation.CompactRow(table, CaptureTimeLbl.Text, CaptureTimeTB);
-                ModernPresentation.CompactRow(table, CurrentStartTimeLbl.Text, CurrentStartTimeTB);
-                ModernPresentation.CompactRow(table, PeriodLbl.Text, PeriodTB);
-                ModernPresentation.CompactRow(table, NoPeriodLbl.Text, NOPeriodTB);
+                ModernPresentation.Section(table, "Demand Register");
+                ModernPresentation.CompactRow(table, "OBIS code", LogicalNameTB);
+                ModernPresentation.CompactRow(table, "Current average", CAValueTB);
+                ModernPresentation.CompactRow(table, "Last average", LAValueTB);
+                ModernPresentation.CompactRow(table, "Scaler", ScalerTB);
+                ModernPresentation.CompactRow(table, "Unit", UnitTB);
+                ModernPresentation.CompactRow(table, "Status", StatusTB);
+                ModernPresentation.CompactRow(table, "Capture time", CaptureTimeTB);
+                ModernPresentation.CompactRow(table, "Current start time", CurrentStartTimeTB);
+                ModernPresentation.CompactRow(table, "Period", PeriodTB);
+                ModernPresentation.CompactRow(table, "Number of periods", NOPeriodTB);
 
                 ModernPresentation.CompactButton(NextPeriodBtn);
                 ModernPresentation.CompactButton(ResetBtn);
@@ -209,29 +208,29 @@ namespace Gurux.DLMS.UI
             switch (index)
             {
                 case 2:
-                    errorProvider1.SetError(CAValueTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(CAValueTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 3:
-                    errorProvider1.SetError(LAValueTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(LAValueTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 4:
-                    errorProvider1.SetError(UnitTB, Properties.Resources.ValueChangedTxt);
-                    errorProvider1.SetError(ScalerTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(UnitTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
+                    errorProvider1.SetError(ScalerTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 5:
-                    errorProvider1.SetError(StatusTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(StatusTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 6:
-                    errorProvider1.SetError(CaptureTimeTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(CaptureTimeTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 7:
-                    errorProvider1.SetError(CurrentStartTimeTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(CurrentStartTimeTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 8:
-                    errorProvider1.SetError(PeriodTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(PeriodTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 case 9:
-                    errorProvider1.SetError(NOPeriodTB, Properties.Resources.ValueChangedTxt);
+                    errorProvider1.SetError(NOPeriodTB, Dirty ? Properties.Resources.ValueChangedTxt : null);
                     break;
                 default:
                     errorProvider1.Clear();

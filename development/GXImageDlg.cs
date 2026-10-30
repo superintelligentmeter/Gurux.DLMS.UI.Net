@@ -56,6 +56,8 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            // superintelligentmeter, 2026-10-30: keep actions separate after native typography and DPI changes.
+            NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
             IdentificationTb.Text = Properties.Settings.Default.Identification;
             FileNameTb.Text = Properties.Settings.Default.ImageFile;
             SigningKeyTb.Text = Properties.Settings.Default.SigningKey;

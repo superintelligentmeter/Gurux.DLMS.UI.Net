@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: keep season interval inputs readable in compact editors with shared column headings. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -34,6 +35,8 @@
 //---------------------------------------------------------------------------
 
 using System;
+using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using Gurux.DLMS.Objects;
 using Gurux.DLMS.Objects.Italy;
@@ -95,6 +98,71 @@ namespace Gurux.DLMS.UI
                 SsHdIntervalTariff5Cb.Items.Add(it);
 
             }
+            if (System.ComponentModel.LicenseManager.UsageMode != System.ComponentModel.LicenseUsageMode.Designtime)
+                InitializeIntervalLayout();
+        }
+
+        private void InitializeIntervalLayout()
+        {
+            ModernPresentation.Apply(this);
+            ReflowIntervals(tabPage7, "WsWdIntervalCb{0}", "WsWdStartHour{0}Tb", "WsWdIntervalTariff{0}Cb");
+            ReflowIntervals(tabPage8, "WsSdInterval{0}Cb", "WsSiStartHour{0}Tb", "WsSdIntervalTariff{0}Cb");
+            ReflowIntervals(tabPage9, "WsHdInterval{0}Cb", "WsHiStartHour{0}Tb", "WsHdIntervalTariff{0}Cb");
+            ReflowIntervals(tabPage4, "SsWdInterval{0}Cb", "SSWdStartHour{0}Tb", "SsWdIntervalTariff{0}Cb");
+            ReflowIntervals(tabPage5, "SsSdInterval{0}Cb", "SSSiStartHour{0}Tb", "SsSdIntervalTariff{0}Cb");
+            ReflowIntervals(tabPage6, "SsHdInterval{0}Cb", "SSHiStartHour{0}Tb", "SsHdIntervalTariff{0}Cb");
+            ModernPresentation.Apply(this);
+        }
+
+        private void ReflowIntervals(TabPage page, string checkName, string hourName, string tariffName)
+        {
+            Control Field(string pattern, int index) => page.Controls.Find(string.Format(pattern, index), true).Single();
+            var checks = Enumerable.Range(1, 5).Select(i => (CheckBox)Field(checkName, i)).ToArray();
+            var hours = Enumerable.Range(1, 5).Select(i => (TextBox)Field(hourName, i)).ToArray();
+            var tariffs = Enumerable.Range(1, 5).Select(i => (ComboBox)Field(tariffName, i)).ToArray();
+            // Keep the shared frames around native text/combo fields; only the
+            // generated repeated-caption row containers are replaced.
+            var hourCells = hours.Select(field => field.Parent).ToArray();
+            var tariffCells = tariffs.Select(field => field.Parent).ToArray();
+            var table = page.Controls.OfType<TableLayoutPanel>().Single();
+            var oldRows = table.Controls.Cast<Control>().ToArray();
+            table.SuspendLayout();
+            table.Controls.Clear();
+            table.ColumnStyles.Clear();
+            table.RowStyles.Clear();
+            table.ColumnCount = 3;
+            table.RowCount = 6;
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
+            int Scale(int value) => (int)Math.Round(value * page.DeviceDpi / 96.0);
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(28)));
+            table.Controls.Add(new Label { Text = "Start hour", AutoSize = true, Anchor = AnchorStyles.Left }, 1, 0);
+            table.Controls.Add(new Label { Text = "Interval tariff", AutoSize = true, Anchor = AnchorStyles.Left }, 2, 0);
+            for (int i = 0; i != 5; ++i)
+            {
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(40)));
+                checks[i].Dock = DockStyle.None;
+                checks[i].AutoSize = true;
+                checks[i].Anchor = AnchorStyles.Left;
+                checks[i].Margin = new Padding(0, 0, Scale(12), 0);
+                checks[i].TabIndex = i * 3;
+                checks[i].AccessibleName = "Interval " + (i + 1) + " in use";
+                table.Controls.Add(checks[i], 0, i + 1);
+                hourCells[i].Dock = tariffCells[i].Dock = DockStyle.Fill;
+                hourCells[i].Margin = tariffCells[i].Margin = new Padding(0, Scale(4), Scale(8), Scale(4));
+                hourCells[i].TabIndex = i * 3 + 1;
+                tariffCells[i].TabIndex = i * 3 + 2;
+                hours[i].AccessibleName = "Interval " + (i + 1) + " start hour";
+                tariffs[i].AccessibleName = "Interval " + (i + 1) + " tariff";
+                table.Controls.Add(hourCells[i], 1, i + 1);
+                table.Controls.Add(tariffCells[i], 2, i + 1);
+            }
+            // Preserve the existing scroll surface's resize callback while giving
+            // all five rows an intrinsic minimum height.
+            table.MinimumSize = new Size(0, Scale(228) + table.Padding.Vertical);
+            foreach (var old in oldRows) old.Dispose();
+            table.ResumeLayout(true);
         }
 
         #region IGXDLMSView Members

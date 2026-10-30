@@ -17,7 +17,7 @@
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup><Compile Include="ApplicationTypography.cs" /></ItemGroup>
-  <ItemGroup><Compile Include="ModernPresentation.ObjectEditors.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="ModernPresentation.ObjectEditors.cs" /><Compile Include="ModernPresentation.NativeCombo.cs" /><Compile Include="GXObjectReferenceView.cs" /></ItemGroup>
   <ItemGroup>
     <Compile Include="Custom\GXDLMSUnixTimeView.cs">
       <SubType>Form</SubType>
@@ -1094,6 +1094,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ModernPresentation.cs" />
+    <Compile Include="ModernPresentation.Layout.cs" />
+    <Compile Include="NativeDialogLayout.cs" />
+    <Compile Include="NativeDialogFooter.cs" />
+    <Compile Include="Ecdsa\CipheringLayout.cs" />
     <Compile Include="GXDLMSReadOnlyObjectView.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: preserve per-attribute write access when timezone and daylight-saving values refresh. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -67,18 +68,40 @@ namespace Gurux.DLMS.UI
             set;
         }
 
-        private void UpdateTimeZone(GXDLMSClock target, bool connected, int value)
+        private bool timeZoneWritable;
+        private bool daylightBeginWritable;
+        private bool daylightEndWritable;
+        private bool daylightDeviationWritable;
+
+        private void ApplyDaylightSavingAccess()
         {
-            if (target.TimeZone == -32768)//0x8000
+            BeginTB.ReadOnly = !EnabledCB.Checked || !daylightBeginWritable;
+            EndTB.ReadOnly = !EnabledCB.Checked || !daylightEndWritable;
+            DeviationTB.ReadOnly = !EnabledCB.Checked || !daylightDeviationWritable;
+        }
+
+        private void UpdateDaylightSavingAccess(GXDLMSViewArguments arg)
+        {
+            daylightBeginWritable = arg.Connected && arg.Client.CanWrite(Target, 5);
+            daylightEndWritable = arg.Connected && arg.Client.CanWrite(Target, 6);
+            daylightDeviationWritable = arg.Connected && arg.Client.CanWrite(Target, 7);
+            ApplyDaylightSavingAccess();
+        }
+
+        private void UpdateTimeZone(GXDLMSClock target, bool writable)
+        {
+            bool useTimeZone = target.TimeZone != short.MinValue;
+            if (!useTimeZone)
             {
-                value = -1;
                 TimeZoneTB.Value = "";
             }
             //If time zone is not used.
             TimeZoneCb.CheckedChanged -= new System.EventHandler(TimeZoneCb_CheckedChanged);
-            TimeZoneCb.Checked = value != -1;
+            TimeZoneCb.Checked = useTimeZone;
             TimeZoneCb.CheckedChanged += new System.EventHandler(TimeZoneCb_CheckedChanged);
-            TimeZoneTB.ReadOnly = connected || value == -1;
+            timeZoneWritable = writable;
+            TimeZoneTB.ReadOnly = !writable || !useTimeZone;
+            CurrentTimeZoneBtn.Enabled = writable && useTimeZone;
         }
 
         public void OnValueChanged(GXDLMSViewArguments arg)
@@ -90,7 +113,7 @@ namespace Gurux.DLMS.UI
             }
             else if (arg.Index == 3)
             {
-                UpdateTimeZone(target, arg.Connected, (int)arg.Value);
+                UpdateTimeZone(target, arg.Connected && arg.Client.CanWrite(Target, 3));
             }
             else if (arg.Index == 5)
             {
@@ -108,7 +131,7 @@ namespace Gurux.DLMS.UI
             {
                 EnabledCB.CheckedChanged -= new System.EventHandler(EnabledCB_CheckedChanged);
                 this.EnabledCB.Checked = target.Enabled;
-                BeginTB.ReadOnly = EndTB.ReadOnly = DeviationTB.ReadOnly = !EnabledCB.Checked;
+                UpdateDaylightSavingAccess(arg);
                 EnabledCB.CheckedChanged += new System.EventHandler(EnabledCB_CheckedChanged);
             }
             else
@@ -130,10 +153,7 @@ namespace Gurux.DLMS.UI
                 GXDLMSClock target = Target as GXDLMSClock;
                 TimeZoneCb.Enabled = enabled;
                 CurrentTimeZoneBtn.Enabled = enabled;
-                if (enabled)
-                {
-                    UpdateTimeZone(target, arg.Connected && arg.Client.CanWrite(Target, arg.Index), target.TimeZone);
-                }
+                UpdateTimeZone(target, enabled);
             }
             else if (arg.Index == 5)
             {
@@ -155,6 +175,7 @@ namespace Gurux.DLMS.UI
             {
                 throw new IndexOutOfRangeException("index");
             }
+            UpdateDaylightSavingAccess(arg);
         }
         public void OnMethodAccessRightsChange(GXDLMSViewArguments arg)
         {
@@ -332,7 +353,7 @@ namespace Gurux.DLMS.UI
         /// <param name="e"></param>
         private void EnabledCB_CheckedChanged(object sender, EventArgs e)
         {
-            BeginTB.ReadOnly = EndTB.ReadOnly = DeviationTB.ReadOnly = !EnabledCB.Checked;
+            ApplyDaylightSavingAccess();
             bool check = EnabledCB.Checked;
             (Target as GXDLMSClock).Enabled = check;
             Target.UpdateDirty(8, check);
@@ -341,11 +362,11 @@ namespace Gurux.DLMS.UI
 
         private void TimeZoneCb_CheckedChanged(object sender, EventArgs e)
         {
-            TimeZoneTB.ReadOnly = !TimeZoneCb.Checked;
-            CurrentTimeZoneBtn.Enabled = TimeZoneCb.Checked;
+            TimeZoneTB.ReadOnly = !timeZoneWritable || !TimeZoneCb.Checked;
+            CurrentTimeZoneBtn.Enabled = timeZoneWritable && TimeZoneCb.Checked;
             if (!TimeZoneCb.Checked)
             {
-                (Target as GXDLMSClock).TimeZone = 0x8000;
+                (Target as GXDLMSClock).TimeZone = short.MinValue;
             }
             else
             {

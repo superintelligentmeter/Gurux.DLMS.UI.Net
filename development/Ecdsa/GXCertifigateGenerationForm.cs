@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-29: resize certificate fields and footer without clipping. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -60,6 +61,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            NativeDialogLayout.CertificateGeneration(this);
             _address = address;
             _path = path;
         }
@@ -69,6 +71,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
+            NativeDialogLayout.CertificateGeneration(this);
             _address = address;
             SystemTitleTb.Text = GXDLMSTranslator.ToHex(systemTitle, false);
             LoadBtn.Enabled = CSRBtn.Enabled = false;

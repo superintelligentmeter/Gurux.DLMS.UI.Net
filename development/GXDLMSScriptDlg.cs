@@ -1,3 +1,4 @@
+// Modified by Superintelligent Meter contributors, 2026-10-29: measured script actions and read-only/validation correctness. GPL-2.0-only; existing notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using Gurux.DLMS.Enums;
 using Gurux.DLMS.Objects;
@@ -49,10 +50,20 @@ namespace Gurux.DLMS.UI
     public partial class GXDLMSScriptDlg : Form
     {
         GXDLMSScript target;
+        readonly GXDLMSScript original;
+        readonly bool readOnly;
         /// <summary>
         /// Available targets.
         /// </summary>
         GXDLMSObjectCollection targets;
+
+        private static object CopyParameter(object value)
+        {
+            if (value is byte[] bytes) return bytes.Clone();
+            if (value is object[] values) return values.Select(CopyParameter).ToArray();
+            if (value is Array array) return array.Clone();
+            return value;
+        }
 
         private void ShowAction(GXDLMSScriptAction a, ListViewItem li)
         {
@@ -97,7 +108,24 @@ namespace Gurux.DLMS.UI
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
-            target = value;
+            NativeDialogFooter.ScriptEditor(this, menuStrip1, IdLbl, IdTb, ActionsLbl, Actions, AddBtn, EditBtn, RemoveBtn, OkBtn, CancelBtn);
+            this.readOnly = readOnly;
+            IdTb.ReadOnly = readOnly;
+            AddBtn.Enabled = EditBtn.Enabled = RemoveBtn.Enabled = !readOnly;
+            editToolStripMenuItem.Enabled = editToolStripMenuItem1.Enabled = !readOnly;
+            original = value;
+            target = new GXDLMSScript { Id = value.Id };
+            foreach (var action in value.Actions)
+            {
+                target.Actions.Add(new GXDLMSScriptAction
+                {
+                    Type = action.Type,
+                    Target = action.Target,
+                    Index = action.Index,
+                    ParameterDataType = action.ParameterDataType,
+                    Parameter = CopyParameter(action.Parameter)
+                });
+            }
             targets = objects;
             removeToolStripMenuItem.Enabled = addToolStripMenuItem.Enabled =
                 deleteToolStripMenuItem.Enabled = addToolStripMenuItem2.Enabled = !readOnly;
@@ -116,6 +144,7 @@ namespace Gurux.DLMS.UI
         /// </summary>
         private void AddScript(object sender, EventArgs e)
         {
+            if (readOnly) return;
             try
             {
                 GXDLMSScriptAction a = new GXDLMSScriptAction();
@@ -137,6 +166,7 @@ namespace Gurux.DLMS.UI
         /// </summary>
         private void EditScript(object sender, EventArgs e)
         {
+            if (readOnly) return;
             try
             {
                 if (Actions.SelectedItems.Count == 1)
@@ -160,6 +190,7 @@ namespace Gurux.DLMS.UI
         /// </summary>
         private void RemoveScript(object sender, EventArgs e)
         {
+            if (readOnly) return;
             while (Actions.SelectedItems.Count != 0)
             {
                 ListViewItem li = Actions.SelectedItems[0];
@@ -172,10 +203,17 @@ namespace Gurux.DLMS.UI
         {
             try
             {
-                target.Id = int.Parse(IdTb.Text);
+                if (!readOnly)
+                {
+                    int identifier = int.Parse(IdTb.Text);
+                    original.Id = identifier;
+                    original.Actions.Clear();
+                    original.Actions.AddRange(target.Actions);
+                }
             }
             catch (Exception ex)
             {
+                DialogResult = DialogResult.None;
                 MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

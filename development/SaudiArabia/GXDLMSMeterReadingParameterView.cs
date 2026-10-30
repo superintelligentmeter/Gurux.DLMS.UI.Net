@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-29: round-trip the two flag bytes and present the regional editor in shared responsive rows. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -37,7 +38,6 @@ using System;
 using System.Windows.Forms;
 using Gurux.DLMS.Objects;
 using Gurux.DLMS.Enums;
-using System.Text;
 
 namespace Gurux.DLMS.UI
 {
@@ -72,6 +72,39 @@ namespace Gurux.DLMS.UI
             ValuesLb.Items.Add("Pass a month");
             ValuesLb.Items.Add("reserved");
             ValuesLb.Items.Add("reserved");
+            if (System.ComponentModel.LicenseManager.UsageMode != System.ComponentModel.LicenseUsageMode.Designtime)
+                InitializePresentation();
+        }
+
+        private void InitializePresentation()
+        {
+            SuspendLayout();
+            try
+            {
+                var table = ModernPresentation.CompactSurface(this, includeActionColumn: false);
+                Controls.Add(table);
+                ModernPresentation.Section(table, "Meter reading parameter");
+                ModernPresentation.CompactRow(table, "Description", DescriptionTB);
+                ModernPresentation.CompactRow(table, "OBIS code", LogicalNameTB);
+                ModernPresentation.Section(table, "Reading triggers");
+                int row = table.RowCount++;
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, (int)Math.Round(240 * DeviceDpi / 96.0)));
+                ValuesLb.Dock = DockStyle.Fill;
+                ValuesLb.IntegralHeight = false;
+                ValuesLb.AccessibleName = "Reading triggers";
+                ValuesLb.TabIndex = row * 2;
+                table.Controls.Add(ValuesLb, 0, row);
+                table.SetColumnSpan(ValuesLb, table.ColumnCount);
+                ModernPresentation.CompactRow(table, "Duration", DurationTb);
+                ModernPresentation.CompactRow(table, "Raw value (hex)", HexTb);
+                Controls.Remove(groupBox1);
+                groupBox1.Dispose();
+                ModernPresentation.Apply(this);
+            }
+            finally
+            {
+                ResumeLayout(true);
+            }
         }
 
         #region IGXDLMSView Members
@@ -89,12 +122,11 @@ namespace Gurux.DLMS.UI
             {
                 if (arg.Value is byte[] && (arg.Value as byte[]).Length == 6)
                 {
-                    GXBitString bs = new GXBitString((byte[])arg.Value, 0);
-                    int val = Convert.ToUInt16(bs);
+                    byte[] value = (byte[])arg.Value;
                     ValuesLb.ItemCheck -= ValuesLb_ItemCheck;
                     for (int pos = 0; pos != 16; ++pos)
                     {
-                        ValuesLb.SetItemChecked(pos, bs.Value[pos] == '1');
+                        ValuesLb.SetItemChecked(pos, (value[pos / 8] & (0x80 >> (pos % 8))) != 0);
                     }
                     ValuesLb.ItemCheck += ValuesLb_ItemCheck;
                     GXByteBuffer bb = new GXByteBuffer((byte[])arg.Value);
@@ -188,28 +220,19 @@ namespace Gurux.DLMS.UI
                 if (DurationTb.Text != "")
                 {
                     UInt32 dur = UInt32.Parse(DurationTb.Text);
-                    StringBuilder sb = new StringBuilder();
+                    ushort flags = 0;
                     for (int pos = 0; pos != 16; ++pos)
                     {
-                        if (e != null && e.Index == pos)
+                        bool selected = e != null && e.Index == pos
+                            ? e.NewValue == CheckState.Checked
+                            : ValuesLb.GetItemChecked(pos);
+                        if (selected)
                         {
-                            sb.Append(e.NewValue == CheckState.Checked ? "1" : "0");
-                        }
-                        else
-                        {
-                            if (ValuesLb.GetItemChecked(pos))
-                            {
-                                sb.Append("1");
-                            }
-                            else
-                            {
-                                sb.Append("0");
-                            }
+                            flags |= (ushort)(1 << (15 - pos));
                         }
                     }
-                    GXBitString bs = new GXBitString(sb.ToString());
                     GXByteBuffer bb = new GXByteBuffer();
-                    bb.SetUInt16(Convert.ToUInt16(bs));
+                    bb.SetUInt16(flags);
                     bb.SetUInt32(dur);
                     (Target as GXDLMSData).Value = bb.Array();
                     errorProvider1.SetError((Control)sender, Properties.Resources.ValueChangedTxt);
