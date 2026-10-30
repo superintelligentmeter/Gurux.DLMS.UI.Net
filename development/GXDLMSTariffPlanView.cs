@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: bound repeated tariff intervals without changing their compound columns. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: keep season interval inputs readable in compact editors with shared column headings. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
@@ -161,6 +162,7 @@ namespace Gurux.DLMS.UI
             // Preserve the existing scroll surface's resize callback while giving
             // all five rows an intrinsic minimum height.
             table.MinimumSize = new Size(0, Scale(228) + table.Padding.Vertical);
+            EditorLayoutPolicy.ConstrainSection(table);
             foreach (var old in oldRows) old.Dispose();
             table.ResumeLayout(true);
         }

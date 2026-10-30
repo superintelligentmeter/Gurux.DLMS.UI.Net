@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: align existing native property inputs through the shared width policy. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -58,6 +59,13 @@ namespace Gurux.DLMS.UI
             InitializeComponent();
             // superintelligentmeter, 2026-10-30: keep actions separate after native typography and DPI changes.
             NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
+            NativePropertyDialog.Group(SignatureGb,
+                (SigningKeyLbl, NativePropertyDialog.Alongside(SigningKeyTb, SignBtn)),
+                (SignatureLbl, NativePropertyDialog.Alongside(SignatureTb, VerifyBtn)));
+            NativePropertyDialog.Apply(this,
+                (TextLbl, NativePropertyDialog.Alongside(IdentificationTb, AsciiCb)),
+                (label1, NativePropertyDialog.Alongside(FileNameTb, BrowseBtn, InfoBtn)),
+                (null, SignatureGb));
             IdentificationTb.Text = Properties.Settings.Default.Identification;
             FileNameTb.Text = Properties.Settings.Default.ImageFile;
             SigningKeyTb.Text = Properties.Settings.Default.SigningKey;

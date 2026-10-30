@@ -79,6 +79,7 @@ namespace Gurux.DLMS.UI
                 add.AutoSize = true; add.AutoSizeMode = AutoSizeMode.GrowAndShrink;
                 add.MinimumSize = new Size(S(form, 80), S(form, 28)); add.Anchor = AnchorStyles.None; add.Dock = DockStyle.None;
                 header.Controls.Add(add, 2, 2);
+                EditorLayoutPolicy.ConfigurePropertyTable(header);
                 objects.SizeChanged += (_, _) =>
                 {
                     if (objects.Columns.Count == 3)

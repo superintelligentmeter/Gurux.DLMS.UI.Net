@@ -32,3 +32,5 @@ Representative non-flags enum properties with undefined constructor defaults are
 Combo captures preserve the requested scroll position around binding/native-size probes. A native combo must fit the horizontal editor viewport or have a usable ancestor horizontal scrollbar. The capture pass also reveals individual children when nested scroll surfaces leave them clipped in both top and bottom captures; contact-sheet selection checks every ancestor viewport, not only the form rectangle.
 
 Register Activation supplies one assignment and Day/Night masks. The ActiveMasksCb checks require a standard native frame inside NativeComboHost, exercise a real selection commit, then refresh the whole object so clear/repopulate transient deselection cannot alter ActiveMask, leave it dirty, or open a modal error.
+
+The complete scalar-width and structured-area audit is documented in ../UiLayoutAudit.README.md. Its separate layout-only worker mode preserves the behavioral suites above.

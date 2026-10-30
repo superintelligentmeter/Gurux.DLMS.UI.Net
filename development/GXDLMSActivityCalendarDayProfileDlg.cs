@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: keep the day identifier compact on the shared input edge. GPL-2.0-only; original notices retained.
 // Modified by Superintelligent Meter contributors, 2026-10-29: separate measured dialog actions from editor content. GPL-2.0-only; existing notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
@@ -49,6 +50,12 @@ namespace Gurux.DLMS.UI
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
             NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
+            NativePropertyDialog.Apply(this, (IdLbl, IdTb));
+            // A day identifier is a compact numeric value, not a stretchable text field.
+            IdTb.Anchor = AnchorStyles.Left;
+            void SizeIdentifier() => IdTb.Width = (int)Math.Round(120d * IdTb.DeviceDpi / 96d);
+            IdTb.DpiChangedAfterParent += (_, _) => SizeIdentifier();
+            SizeIdentifier();
             Target = target;
             IdTb.Text = Target.DayId.ToString();
         }

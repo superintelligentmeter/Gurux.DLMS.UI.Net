@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: bound property rows while allowing data lists to use the workspace. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -88,6 +89,7 @@ namespace Gurux.DLMS.UI
             Controls.Add(table);
             Controls.Remove(groupBox1);
             groupBox1.Dispose();
+            EditorLayoutPolicy.ConfigurePropertyTable(table, boundSection: false);
             ModernPresentation.Apply(this);
             ResumeLayout(true);
         }

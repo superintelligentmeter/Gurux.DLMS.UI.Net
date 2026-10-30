@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: shared property widths with flexible Association data tabs. GPL-2.0-only; original notices retained.
 // Modified 2026-10-30: constrain Association tabs to their available viewport. GPL-2.0-only.
 // superintelligentmeter, 2026-10-29: preserve live conformance feedback and keep password actions visible at narrow widths. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
@@ -140,26 +141,15 @@ namespace Gurux.DLMS.UI
                 ColumnCount = actionColumn ? 3 : 2,
                 Padding = new Padding(0, 0, 8, 8),
                 Margin = Padding.Empty,
-                BackColor = Color.White,
-                MinimumSize = new Size(ScaleFor(page, 480), 0),
-                MaximumSize = new Size(ScaleFor(page, 800), 0)
+                BackColor = Color.White
             };
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, ScaleFor(page, 144)));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, ScaleFor(page, EditorLayoutPolicy.LabelColumnWidth)));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             if (actionColumn)
             {
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             }
             page.Controls.Add(table);
-            void FitTableWidth()
-            {
-                int available = Math.Max(1, page.ClientSize.Width - page.Padding.Horizontal - table.Padding.Horizontal);
-                int minimum = Math.Min(ScaleFor(page, 480), available);
-                table.MinimumSize = new Size(minimum, 0);
-                table.MaximumSize = new Size(Math.Max(minimum, available), 0);
-            }
-            page.Resize += (_, _) => FitTableWidth();
-            FitTableWidth();
             return table;
         }
 
@@ -314,13 +304,11 @@ namespace Gurux.DLMS.UI
                     Margin = Padding.Empty,
                     BackColor = Color.White
                 };
-                var labelColumn = new ColumnStyle(SizeType.Absolute, ScaleFor(this, 144));
-                var valueColumn = new ColumnStyle(SizeType.Absolute, ScaleFor(this, 260));
-                root.ColumnStyles.Add(labelColumn);
-                root.ColumnStyles.Add(valueColumn);
-                // Keep spanning tab content within the viewport instead of letting its
-                // preferred width expand an AutoSize column after a narrow resize.
+                root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, ScaleFor(this, EditorLayoutPolicy.LabelColumnWidth)));
                 root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                // CompactRow keeps the inline version controls inside its value cell.
+                // The spanning tabs retain all remaining workspace width.
+                root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0));
                 ModernPresentation.Section(root, groupBox1.Text.Replace("  ", " "));
                 var versionField = new FlowLayoutPanel
                 {
@@ -337,30 +325,6 @@ namespace Gurux.DLMS.UI
                 VersionTb.Margin = new Padding(0, 4, 0, 4);
                 versionField.Controls.Add(VersionLbl);
                 versionField.Controls.Add(VersionTb);
-                root.SizeChanged += (_, _) =>
-                {
-                    // Keep the version field visible when this editor is hosted in
-                    // a narrow workspace (for example, after moving to a smaller
-                    // monitor). At normal widths retain the original label/value
-                    // proportions; below that, reclaim only the space needed.
-                    int roomForMainColumns = root.ClientSize.Width - root.Padding.Horizontal - versionField.PreferredSize.Width;
-                    int desiredLabel = ScaleFor(this, 144);
-                    int desiredValue = ScaleFor(this, 260);
-                    int minimumLabel = ScaleFor(this, 100);
-                    int minimumValue = ScaleFor(this, 170);
-                    if (roomForMainColumns < desiredLabel + desiredValue)
-                    {
-                        int reduction = desiredLabel + desiredValue - roomForMainColumns;
-                        int labelReduction = Math.Min(reduction, desiredLabel - minimumLabel);
-                        labelColumn.Width = desiredLabel - labelReduction;
-                        valueColumn.Width = Math.Max(minimumValue, desiredValue - (reduction - labelReduction));
-                    }
-                    else
-                    {
-                        labelColumn.Width = desiredLabel;
-                        valueColumn.Width = desiredValue;
-                    }
-                };
                 ModernPresentation.CompactRow(root, LogicalNameLbl.Text, LogicalNameTB, versionField, height: 40);
                 tabControl1.Dock = DockStyle.Fill;
                 tabControl1.Margin = new Padding(0, 6, 0, 0);
@@ -377,6 +341,7 @@ namespace Gurux.DLMS.UI
                 BuildApplicationContextPage();
                 BuildAuthenticationPage();
                 BuildListPage(tabPage6, UsersList, AddUserBtn, RemoveUserBtn);
+                EditorLayoutPolicy.ConfigurePropertyTable(root, boundSection: false);
 
                 Controls.Remove(groupBox1);
                 groupBox1.Dispose();
@@ -410,6 +375,7 @@ namespace Gurux.DLMS.UI
             AddFullWidthRow(table, passwordActions);
             ModernPresentation.Section(table, "Security");
             ModernPresentation.CompactRow(table, SecuritySetupReferenceLbl.Text, SecuritySetupCb);
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
             groupBox2.Dispose();
             DisposeOrphaned(oldControls);
         }
@@ -452,6 +418,7 @@ namespace Gurux.DLMS.UI
             ModernPresentation.CompactRow(table, MaxSendPDUSizeLbl.Text, MaxSendPDUSizeTb);
             ModernPresentation.CompactRow(table, DLMSVersionNumberLbl.Text, DLMSVersionNumberTB);
             ModernPresentation.CompactRow(table, CypheringInfoLbl.Text, CypheringInfoTb);
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
             DisposeOrphaned(oldControls);
         }
 
@@ -467,6 +434,7 @@ namespace Gurux.DLMS.UI
             ModernPresentation.CompactRow(table, ApplicationDLMSUALbl.Text, ApplicationDLMSUATb);
             ModernPresentation.CompactRow(table, ApplicationContextLbl.Text, ApplicationContextTb);
             ModernPresentation.CompactRow(table, ApplicationContextIDLbl.Text, ApplicationContextIDCb);
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
             DisposeOrphaned(oldControls);
         }
 
@@ -482,6 +450,7 @@ namespace Gurux.DLMS.UI
             ModernPresentation.CompactRow(table, AuthenticationDLMSUALbl.Text, AuthenticationDLMSUATb);
             ModernPresentation.CompactRow(table, AuthenticationMechanismNameLbl.Text, AuthenticationMechanismNameTb);
             ModernPresentation.CompactRow(table, AuthenticationMechanismIdLbl.Text, AuthenticationMechanismIdCb);
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
             DisposeOrphaned(oldControls);
         }
 

@@ -227,56 +227,87 @@ namespace Gurux.DLMS.UI
                 ((Label)Find(root, "ACalendarNameLbl"), Find(root, "ACalendarNameTB")),
                 ((Label)Find(root, "PCalendarNameLbl"), Find(root, "PCalendarNameTB"))
             };
+            bool arrangingCalendar = false;
             void LayoutRows()
             {
-                int outerLeft = Scale(root, 6);
-                var activateLabel = (Label)Find(root, "ActivatePassiveCalendarLbl");
-                int widestLabel = outerRows.Select(row => LabelTextWidth(row.Label))
-                    .Append(LabelTextWidth(activateLabel)).Max();
-                int outerFieldLeft = outerLeft + widestLabel + Scale(root, 16);
-                foreach (var (label, field) in outerRows)
+                if (arrangingCalendar || root.IsDisposed) return;
+                arrangingCalendar = true;
+                try
                 {
-                    label.Left = outerLeft;
-                    field.Left = outerFieldLeft;
-                    field.Top = label.Top - (field.Height - label.Height) / 2;
-                    field.Width = Math.Max(Scale(root, 110), root.ClientSize.Width - outerFieldLeft - Scale(root, 8));
-                    field.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                }
-                var activateField = Find(root, "ActivatePassiveCalendarTb");
-                var activateButton = Find(root, "ActivatePassiveCalendarBtn");
-                activateLabel.Left = outerLeft;
-                activateField.Left = outerFieldLeft;
-                activateField.Top = activateLabel.Top - (activateField.Height - activateLabel.Height) / 2;
-                activateField.Width = Math.Max(Scale(root, 100), root.ClientSize.Width - outerFieldLeft - Scale(root, 8));
-                activateField.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                foreach (var (label, field) in calendarRows)
-                {
-                    Control page = label.Parent!;
-                    int left = Scale(page, 8);
-                    int fieldLeft = left + LabelTextWidth(label) + Scale(page, 16);
-                    label.Left = left;
-                    field.Left = fieldLeft;
-                    field.Top = label.Top - (field.Height - label.Height) / 2;
-                    if (label.Name == "PCalendarNameLbl")
+                    int outerLeft = Scale(root, 6);
+                    var activateLabel = (Label)Find(root, "ActivatePassiveCalendarLbl");
+                    int rail = Scale(root, EditorLayoutPolicy.LabelColumnWidth);
+                    int outerFieldLeft = outerLeft + rail;
+                    foreach (var label in outerRows.Select(row => row.Label).Append(activateLabel))
                     {
-                        activateButton.Width = Scale(page, 100);
-                        activateButton.Height = Scale(page, 32);
-                        activateButton.Left = page.ClientSize.Width - activateButton.Width - Scale(page, 8);
-                        activateButton.Top = field.Top - Scale(page, 2);
-                        activateButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-                        field.Width = Math.Max(Scale(page, 100), activateButton.Left - fieldLeft - Scale(page, 10));
-                        field.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                        int profileTop = Math.Max(Scale(page, 38), activateButton.Bottom + Scale(page, 8));
-                        activeProfileTabs.Top = passiveProfileTabs.Top = profileTop;
-                        activeProfileTabs.Height = Math.Max(Scale(page, 100), activeProfileTabs.Parent.ClientSize.Height - profileTop - Scale(page, 6));
-                        passiveProfileTabs.Height = Math.Max(Scale(page, 100), page.ClientSize.Height - profileTop - Scale(page, 6));
+                        label.AutoSize = false;
+                        label.Size = new Size(rail - Scale(root, 12), Scale(root, 32));
+                        label.TextAlign = ContentAlignment.MiddleLeft;
                     }
-                    else
+                    int headerTop = Scale(root, 24);
+                    foreach (var (label, field) in outerRows)
                     {
-                        field.Width = Math.Max(Scale(page, 100), page.ClientSize.Width - fieldLeft - Scale(page, 8));
-                        field.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                        label.Top = headerTop;
+                        headerTop += Scale(root, 40);
+                        label.Left = outerLeft;
+                        field.Left = outerFieldLeft;
+                        field.Top = label.Top - (field.Height - label.Height) / 2;
+                        field.Width = Math.Min(Scale(root, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(root, 110), root.ClientSize.Width - outerFieldLeft - Scale(root, 8)));
+                        field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                    }
+                    var activateField = Find(root, "ActivatePassiveCalendarTb");
+                    var activateButton = Find(root, "ActivatePassiveCalendarBtn");
+                    activateLabel.Left = outerLeft;
+                    activateLabel.Top = headerTop;
+                    var calendarTabs = Find(root, "tabControl1");
+                    calendarTabs.Top = activateLabel.Bottom + Scale(root, 8);
+                    calendarTabs.Height = Math.Max(Scale(root, 100), root.ClientSize.Height - calendarTabs.Top - Scale(root, 6));
+                    activateField.Left = outerFieldLeft;
+                    activateField.Top = activateLabel.Top - (activateField.Height - activateLabel.Height) / 2;
+                    activateField.Width = Math.Min(Scale(root, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(root, 100), root.ClientSize.Width - outerFieldLeft - Scale(root, 8)));
+                    activateField.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                    foreach (var (label, field) in calendarRows)
+                    {
+                        Control page = label.Parent!;
+                        // A hidden tab can still have its designer width. Recompute
+                        // after its own resize/show event, not only when the outer form resizes.
+                        if (page.ClientSize.Width < Scale(page, 280)) continue;
+                        int left = Scale(page, 8);
+                        int fieldLeft = left + Scale(page, EditorLayoutPolicy.LabelColumnWidth);
+                        label.AutoSize = false;
+                        label.Size = new Size(Scale(page, EditorLayoutPolicy.LabelColumnWidth - 12), Scale(page, 32));
+                        label.TextAlign = ContentAlignment.MiddleLeft;
+                        label.Left = left;
+                        field.Left = fieldLeft;
+                        field.Top = label.Top - (field.Height - label.Height) / 2;
+                        if (label.Name == "PCalendarNameLbl")
+                        {
+                            activateButton.Width = Scale(page, 100);
+                            activateButton.Height = Scale(page, 32);
+                            activateButton.Left = Math.Min(page.ClientSize.Width - Scale(page, 8), fieldLeft + Scale(page, EditorLayoutPolicy.FieldWidth)) - activateButton.Width;
+                            activateButton.Top = field.Top - Scale(page, 2);
+                            activateButton.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                            field.Width = Math.Max(Scale(page, 100), activateButton.Left - fieldLeft - Scale(page, 10));
+                            field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                            int profileTop = Math.Max(Scale(page, 38), activateButton.Bottom + Scale(page, 8));
+                            activeProfileTabs.Top = passiveProfileTabs.Top = profileTop;
+                            activeProfileTabs.Height = Math.Max(Scale(page, 100), activeProfileTabs.Parent.ClientSize.Height - profileTop - Scale(page, 6));
+                            passiveProfileTabs.Height = Math.Max(Scale(page, 100), page.ClientSize.Height - profileTop - Scale(page, 6));
+                        }
+                        else
+                        {
+                            field.Width = Math.Min(Scale(page, EditorLayoutPolicy.FieldWidth), Math.Max(Scale(page, 100), page.ClientSize.Width - fieldLeft - Scale(page, 8)));
+                            field.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                        }
                     }
                 }
+                finally { arrangingCalendar = false; }
+            }
+            foreach (Control page in calendarRows.Select(row => row.Label.Parent).Distinct())
+            {
+                page.SizeChanged += (_, _) => LayoutRows();
+                page.VisibleChanged += (_, _) => LayoutRows();
+                page.DpiChangedAfterParent += (_, _) => LayoutRows();
             }
             root.Resize += (_, _) => LayoutRows();
             root.FontChanged += (_, _) => LayoutRows();
@@ -827,7 +858,7 @@ namespace Gurux.DLMS.UI
                 Name = "ModernContent", Dock = DockStyle.Top, AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = includeActionColumn ? 3 : 2,
                 MaximumSize = new Size(Scale(form, 800), 0), MinimumSize = Size.Empty,
-                Padding = new Padding(0, 0, 24, 12), BackColor = Color.White
+                Padding = new Padding(0, 0, Scale(form, 16), Scale(form, 12)), BackColor = Color.White
             };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 144)));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -923,6 +954,7 @@ namespace Gurux.DLMS.UI
                 caption.TextAlign = ContentAlignment.TopLeft;
                 caption.Padding = new Padding(0, Scale(table, 12), 0, 0);
             }
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
         }
 
         public static void CompactButton(Button button)
@@ -1069,6 +1101,7 @@ namespace Gurux.DLMS.UI
                     field.ApplyModernStyle(compact: true);
                     metadata.Controls.Add(field, column + 1, i / 2);
                 }
+                EditorLayoutPolicy.ConstrainSection(metadata);
                 Add(metadata, SizeType.Absolute, Scale(form, 120));
                 // The reference has its own full-width row. Its native selectable
                 // text wraps and the row follows its measured height at each DPI.
@@ -1112,6 +1145,7 @@ namespace Gurux.DLMS.UI
                         reading.Controls.Add(field, col, row);
                     }
                 }
+                EditorLayoutPolicy.ConstrainSection(reading);
                 Add(reading, SizeType.Absolute, Scale(form, 128));
                 bool IsMinimized() => (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized;
                 void AlignProfileColumns()
@@ -1465,6 +1499,7 @@ namespace Gurux.DLMS.UI
                 layout.Controls.Add(footer, 0, 2);
                 layout.SetColumnSpan(footer, 2);
             }
+            EditorLayoutPolicy.ConfigurePropertyTable(layout, boundSection: false);
             page.Controls.Add(layout);
         }
 

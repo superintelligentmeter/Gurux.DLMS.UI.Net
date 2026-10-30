@@ -10,14 +10,7 @@ namespace Gurux.DLMS.UI
     {
         private static void ConfigureCompactSurface(TableLayoutPanel table)
         {
-            void FitLabelColumn()
-            {
-                if (table.IsDisposed || table.ColumnStyles.Count == 0 || table.ClientSize.Width <= 0) return;
-                int width = Math.Min(Scale(table, 144), Math.Max(Scale(table, 100), table.ClientSize.Width / 3));
-                if (Math.Abs(table.ColumnStyles[0].Width - width) > 1) table.ColumnStyles[0].Width = width;
-            }
-            table.SizeChanged += (_, _) => FitLabelColumn();
-            table.DpiChangedAfterParent += (_, _) => FitLabelColumn();
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
         }
 
         // The existing value-field instance changes presentation when its bound data type
@@ -30,6 +23,10 @@ namespace Gurux.DLMS.UI
                 int height = field.RequiresStructuredLayout ? Math.Max(logicalHeight, 160)
                     : field.Type is ValueFieldType.ListBox or ValueFieldType.CheckedListBox ? Math.Max(logicalHeight, 120) : logicalHeight;
                 int pixels = Scale(table, height);
+                if (caption.Width > 0)
+                    pixels = Math.Max(pixels, TextRenderer.MeasureText(caption.Text, caption.Font,
+                        new Size(Math.Max(1, caption.Width - caption.Padding.Horizontal), 0),
+                        TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix).Height + caption.Margin.Vertical + caption.Padding.Vertical);
                 if (field.MaximumSize.Height != 0) field.MaximumSize = new Size(field.MaximumSize.Width, 0);
                 caption.TextAlign = height > 60 ? ContentAlignment.TopLeft : ContentAlignment.MiddleLeft;
                 caption.Padding = height > 60 ? new Padding(0, Scale(table, 10), 0, 0) : Padding.Empty;
@@ -48,6 +45,7 @@ namespace Gurux.DLMS.UI
             private readonly int row;
             private readonly int logicalHeight;
             private bool arranging;
+            private bool parentLayoutQueued;
             internal CompactActionRow(TableLayoutPanel table, int row, Control field, Control action, int logicalHeight)
             {
                 this.table = table; this.row = row; this.field = field; this.action = action; this.logicalHeight = logicalHeight;
@@ -70,7 +68,21 @@ namespace Gurux.DLMS.UI
                     bool stacked = ClientSize.Width < actionWidth + gap + ModernPresentation.Scale(this, 180);
                     int actionHeight = Math.Max(ModernPresentation.Scale(this, 32), action.GetPreferredSize(new Size(actionWidth, 0)).Height);
                     int height = stacked ? baseHeight + actionHeight + inset : Math.Max(baseHeight, actionHeight + inset * 2);
-                    if (Math.Abs(table.RowStyles[row].Height - height) > 1) table.RowStyles[row].Height = height;
+                    if (Math.Abs(table.RowStyles[row].Height - height) > 1)
+                    {
+                        table.RowStyles[row].Height = height;
+                        // The table may already be arranging this child with cached row
+                        // bounds. Finish that pass before applying the new stacked height.
+                        if (!parentLayoutQueued && table.IsHandleCreated)
+                        {
+                            parentLayoutQueued = true;
+                            table.BeginInvoke((Action)(() =>
+                            {
+                                parentLayoutQueued = false;
+                                if (!table.IsDisposed && !IsDisposed) table.PerformLayout();
+                            }));
+                        }
+                    }
                     field.Bounds = new Rectangle(0, inset, Math.Max(1, stacked ? ClientSize.Width : ClientSize.Width - actionWidth - gap), baseHeight - inset * 2);
                     action.Bounds = new Rectangle(stacked ? 0 : ClientSize.Width - actionWidth, stacked ? baseHeight : inset, actionWidth, actionHeight);
                 }

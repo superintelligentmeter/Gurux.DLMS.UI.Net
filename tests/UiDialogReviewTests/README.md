@@ -17,3 +17,5 @@ The `combos OUTPUT` mode inventories every native combo and captures wide/narrow
 Fixtures explicitly apply the same ApplicationTypography used by the production Idle handler before measuring controls, since the bounded DoEvents pump does not trigger that normal idle path. The output includes the exact tested UI assembly SHA-256.
 
 Native height comparisons allow the observed two-pixel 120-to-96 DPI rounding/cache difference; native item-rectangle/font fit and immediate-parent containment remain separate checks. Device ciphering fixtures explicitly exercise GeneralSigning and StaticUnifiedModel so all four key selectors are rendered on both monitors.
+
+The complete scalar-width and structured-area audit is documented in ../UiLayoutAudit.README.md. Its layout-only mode uses fresh physical-monitor fixtures and preserves the behavioral suites above.

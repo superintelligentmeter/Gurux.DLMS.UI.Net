@@ -1,3 +1,4 @@
+// superintelligentmeter contributors, 2026-10-30: align existing native property inputs through the shared width policy. GPL-2.0-only; original notices retained.
 // Modified by Superintelligent Meter contributors, 2026-10-29: separate measured dialog actions from editor content. GPL-2.0-only; existing notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
@@ -48,6 +49,7 @@ namespace Gurux.DLMS.UI
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
             NativeDialogFooter.Apply(this, OkBtn, CancelBtn);
+            NativePropertyDialog.Apply(this, (IdLbl, TimeTb), (label2, ScriptCb), (label1, SelectorTb));
             Target = target;
             if (target.StartTime != DateTime.MinValue)
             {

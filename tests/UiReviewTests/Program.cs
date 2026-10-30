@@ -39,7 +39,7 @@ internal static class Program
         if (args.Length == 0) { Console.Error.WriteLine("Usage: UiReviewTests inventory|audit|regressions|behavior|roundtrip|sort-reference|clock-combo|all-combos OUTPUT [--filter NAME[,NAME]] [--timeout 30]"); return 64; }
         try
         {
-            if (args[0] == "worker") return Worker(args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4]) : -1, args.Length > 5 && args[5] == "combos");
+            if (args[0] == "worker") return Worker(args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4]) : -1, args.Length > 5 && args[5] == "combos", args.Length > 5 && args[5] == "layout");
             if (args[0] == "sort-reference-worker") return SortReferenceWorker(args[1], args[2]);
             if (args[0] == "clock-combo-worker") return ClockComboWorker(args[1], args[2]);
             var output = Path.GetFullPath(args.Length > 1 ? args[1] : "ui-review-artifacts");
@@ -623,9 +623,10 @@ internal static class Program
         return result;
     }
 
-    static int Worker(string typeName, string state, string output, int monitor = -1, bool comboAudit = false)
+    static int Worker(string typeName, string state, string output, int monitor = -1, bool comboAudit = false, bool layoutAudit = false)
     {
-        var result = new CaseResult { View = typeName, State = state, Status = "Started", ComboAudit = comboAudit, AssemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Ui.Location))) };
+        if (layoutAudit) Sizes[0] = new Size(1500, 900);
+        var result = new CaseResult { View = typeName, State = state, Status = "Started", ComboAudit = comboAudit, LayoutAudit = layoutAudit, AssemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Ui.Location))) };
         void Save() => Write(Path.Combine(output, "result.json"), result);
         Save();
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
@@ -689,7 +690,7 @@ internal static class Program
                 foreach (var selection in selections) selection.Key.SelectedIndex = selection.Value;
                 if (comboAudit && model is GXDLMSData enumData && t.Name == "GXDLMSDataView") CheckDataEnumTransitions(editor, view!, enumData, client, result, output, size, "size" + sizeIndex);
             }
-            if (view != null)
+            if (view != null && !layoutAudit)
             {
                 var provider = view.ErrorProvider ?? t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Where(f => typeof(ErrorProvider).IsAssignableFrom(f.FieldType)).Select(f => f.GetValue(editor)).OfType<ErrorProvider>().FirstOrDefault();
                 if (view.ErrorProvider == null && provider != null) result.FixtureNotes.Add("Dirty indicator inspection uses the actual ErrorProvider component because the interface getter returns null.");
@@ -706,7 +707,7 @@ internal static class Program
                 }
             }
             if (t.Name == "GXFunctionControlFunctionDlg") result.BehaviorChecks.Add(new() { Name = "FunctionControlFunction/accept-cancel", Passed = editor.AcceptButton != null && editor.CancelButton != null && editor.AcceptButton != editor.CancelButton, Detail = "Accept=" + (editor.AcceptButton as Control)?.Name + "; Cancel=" + (editor.CancelButton as Control)?.Name });
-            if (view != null && !(comboAudit && model is GXDLMSData)) CheckBehavior(editor, view, model!, client, result.BehaviorChecks);
+            if (!layoutAudit && view != null && !(comboAudit && model is GXDLMSData)) CheckBehavior(editor, view, model!, client, result.BehaviorChecks);
             if (comboAudit) RecordInactiveCombos(editor, result);
             result.Monitor = monitor >= 0 ? Screen.AllScreens[monitor].DeviceName : "Offscreen default monitor";
             result.Status = "Passed";
@@ -768,6 +769,28 @@ internal static class Program
             else if (state == "structured") { data.SetDataType(2, DataType.Array); data.Value = new GXArray { new GXStructure { "Phase L1", 230.15, 12.4 }, new GXStructure { "Phase L2", 229.8, 11.7 }, new GXStructure { "Phase L3", 231.2, 12.1 } }; }
             else if (state == "enum") SetDataEnumFixture(data);
             else { data.SetDataType(2, DataType.String); data.Value = state == "blank" ? null : "SM-LAB-2026-000182 / Firmware 3.2.17 / Manufacturer test unit"; }
+        }
+        if (state == "structured" && model is GXDLMSPppSetup ppp)
+        {
+            ppp.SetDataType(3, DataType.Array); ppp.SetDataType(4, DataType.Array);
+            ppp.LCPOptions = new[]
+            {
+                new GXDLMSPppSetupLcpOption { Type = Gurux.DLMS.Objects.Enums.PppSetupLcpOptionType.MaxRecUnit, Length = 4, Data = (ushort)1500 },
+                new GXDLMSPppSetupLcpOption { Type = Gurux.DLMS.Objects.Enums.PppSetupLcpOptionType.MagicNumber, Length = 6, Data = 0x12345678u }
+            };
+            ppp.IPCPOptions = new[]
+            {
+                new GXDLMSPppSetupIPCPOption { Type = Gurux.DLMS.Objects.Enums.PppSetupIPCPOptionType.PrefLocalIP, Length = 6, Data = 0xC000020Au },
+                new GXDLMSPppSetupIPCPOption { Type = Gurux.DLMS.Objects.Enums.PppSetupIPCPOptionType.PrefPeerIP, Length = 6, Data = 0xC0000201u }
+            };
+            notes.Add("Explicit populated LCP/IPCP option arrays exercise dynamic structured row height and width.");
+        }
+        if (state == "structured" && model is GXDLMSIp4Setup ip4)
+        {
+            ip4.SetDataType(4, DataType.Array); ip4.SetDataType(5, DataType.Array);
+            ip4.MulticastIPAddress = new[] { System.Net.IPAddress.Parse("239.192.0.1"), System.Net.IPAddress.Parse("239.192.0.2") };
+            ip4.IPOptions = new[] { new GXDLMSIp4SetupIpOption { Type = Gurux.DLMS.Objects.Enums.Ip4SetupIpOptionType.RecordRoute, Length = 7, Data = new byte[] { 4, 192, 0, 2, 10 } } };
+            notes.Add("Explicit multicast addresses and record-route option exercise structured arrays beside bounded scalar fields.");
         }
         var peers = new GXDLMSObjectCollection { model };
         foreach (var peer in new GXDLMSObject[] { new GXDLMSData("0.0.96.1.1.255"), new GXDLMSRegister("1.0.1.8.0.255"), new GXDLMSScriptTable("0.0.10.0.0.255"), new GXDLMSCredit("0.0.19.10.0.255"), new GXDLMSCharge("0.0.19.20.0.255") }) if (peer.GetType() != model.GetType()) peers.Add(peer);
@@ -910,11 +933,14 @@ internal static class Program
             foreach (var surface in scrollables) surface.AutoScrollPosition = Point.Empty;
             Pump();
         }
-        if (result.ComboAudit && requested.Width == 620)
+        if ((result.ComboAudit || result.LayoutAudit) && requested.Width == 620)
         {
             // Nested tabs can need an intermediate scroll position: scrolling
             // every ancestor to its bottom does not expose every native child.
-            foreach (var combo in Descendants(editor).OfType<ComboBox>().Where(c => c.Visible).ToArray())
+            IEnumerable<Control> reveal = result.LayoutAudit
+                ? Descendants(editor).Where(c => LayoutMetrics.Role(c) is "Scalar" or "Action" or "Choice")
+                : Descendants(editor).OfType<ComboBox>();
+            foreach (var combo in reveal.Where(c => c.Visible).ToArray())
             {
                 string path = ControlPath(combo);
                 bool captured = result.Captures.Where(c => c.Width == requested.Width && c.Status == "Captured").Any(c =>
@@ -951,6 +977,7 @@ internal static class Program
             string file = requested.Width + "x" + requested.Height + "--" + variant + ".png";
             using (var image = new Bitmap(Math.Max(editor.Width, 1), Math.Max(editor.Height, 1))) { editor.DrawToBitmap(image, new Rectangle(Point.Empty, editor.Size)); image.Save(Path.Combine(output, file)); }
             capture.Path = Path.Combine(output, file);
+            if (result.LayoutAudit) capture.LayoutMetrics = LayoutMetrics.Measure(editor);
             foreach (var c in Descendants(editor).Where(c => c.Visible)) capture.Controls.Add(MeasureControl(editor, c));
             foreach (var parent in Descendants(editor).Prepend(editor))
             {
@@ -1068,8 +1095,8 @@ internal static class Program
     sealed class InventoryResult { public string Assembly { get; set; } = ""; public string AssemblySha256 { get; set; } = ""; public string AssemblyVersion { get; set; } = ""; public DateTime CreatedUtc { get; set; } public int ObjectViewCount { get; set; } public int DialogCount { get; set; } public int UnattributedViewCount { get; set; } public List<ScreenEntry> Screens { get; set; } = []; }
     sealed class ScreenEntry { public string Type { get; set; } = ""; public string ShortName { get; set; } = ""; public string Kind { get; set; } = ""; public string ModelType { get; set; } = ""; public byte[] Versions { get; set; } = []; public string[] LogicalNames { get; set; } = []; public string[] Standards { get; set; } = []; public string[] Constructors { get; set; } = []; public string Coverage { get; set; } = ""; }
     sealed class ComboEntry { public string Path { get; set; } = ""; public string Name { get; set; } = ""; public string NativeName { get; set; } = ""; public string Kind { get; set; } = ""; public int AttributeIndex { get; set; } public string HostType { get; set; } = ""; public int NativeInstanceId { get; set; } public bool VisibleObserved { get; set; } public bool BehaviorChecked { get; set; } public string BehaviorCoverage { get; set; } = ""; public string[] Items { get; set; } = []; public string[] ItemTypes { get; set; } = []; public List<string> Variants { get; set; } = []; }
-    sealed class CaseResult { public bool ComboAudit { get; set; } public List<ComboEntry> Combos { get; set; } = []; public string View { get; set; } = ""; public string State { get; set; } = ""; public string Status { get; set; } = "Failed"; public string AssemblySha256 { get; set; } = ""; public string Monitor { get; set; } = ""; public bool BindingSucceeded { get; set; } public bool DirtyIndicatorAppeared { get; set; } public bool CleanIndicatorCleared { get; set; } public List<string> FixtureNotes { get; set; } = []; public List<string> Errors { get; set; } = []; public List<CaptureResult> Captures { get; set; } = []; public List<Regression> BehaviorChecks { get; set; } = []; }
-    sealed class CaptureResult { public int Width { get; set; } public int Height { get; set; } public int ActualWidth { get; set; } public int ActualHeight { get; set; } public int Dpi { get; set; } public string Variant { get; set; } = "default"; public string Status { get; set; } = ""; public string Error { get; set; } = ""; public string Path { get; set; } = ""; public List<ControlResult> Controls { get; set; } = []; public List<Overlap> Overlaps { get; set; } = []; public List<ScrollSurface> ScrollSurfaces { get; set; } = []; }
+    sealed class CaseResult { public bool LayoutAudit { get; set; } public bool ComboAudit { get; set; } public List<ComboEntry> Combos { get; set; } = []; public string View { get; set; } = ""; public string State { get; set; } = ""; public string Status { get; set; } = "Failed"; public string AssemblySha256 { get; set; } = ""; public string Monitor { get; set; } = ""; public bool BindingSucceeded { get; set; } public bool DirtyIndicatorAppeared { get; set; } public bool CleanIndicatorCleared { get; set; } public List<string> FixtureNotes { get; set; } = []; public List<string> Errors { get; set; } = []; public List<CaptureResult> Captures { get; set; } = []; public List<Regression> BehaviorChecks { get; set; } = []; }
+    sealed class CaptureResult { public List<LayoutMetric> LayoutMetrics { get; set; } = []; public int Width { get; set; } public int Height { get; set; } public int ActualWidth { get; set; } public int ActualHeight { get; set; } public int Dpi { get; set; } public string Variant { get; set; } = "default"; public string Status { get; set; } = ""; public string Error { get; set; } = ""; public string Path { get; set; } = ""; public List<ControlResult> Controls { get; set; } = []; public List<Overlap> Overlaps { get; set; } = []; public List<ScrollSurface> ScrollSurfaces { get; set; } = []; }
     sealed class ControlResult { public string Name { get; set; } = ""; public string Path { get; set; } = ""; public string Type { get; set; } = ""; public string Text { get; set; } = ""; public int X { get; set; } public int Y { get; set; } public int Width { get; set; } public int Height { get; set; } public int ParentWidth { get; set; } public int ParentHeight { get; set; } public int Left { get; set; } public int Top { get; set; } public float FontPoints { get; set; } public bool Enabled { get; set; } public int TabIndex { get; set; } public bool TabStop { get; set; } public string AccessibleName { get; set; } = ""; public string EffectiveAccessibleName { get; set; } = ""; public string AccessibleRole { get; set; } = ""; public bool AccessibilityCandidate { get; set; } public bool LabelClipCandidate { get; set; } public bool OutsideParent { get; set; } public string FieldType { get; set; } = ""; }
     sealed class Overlap { public string First { get; set; } = ""; public string Second { get; set; } = ""; public int Width { get; set; } public int Height { get; set; } }
     sealed class ScrollSurface { public string Path { get; set; } = ""; public bool Horizontal { get; set; } public bool Vertical { get; set; } public int ClientWidth { get; set; } public int ClientHeight { get; set; } public int DisplayWidth { get; set; } public int DisplayHeight { get; set; } }

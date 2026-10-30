@@ -246,8 +246,6 @@ namespace Gurux.DLMS.UI
                 .DefaultIfEmpty(0).Max()));
             var table = new TableLayoutPanel { Name = "ObjectEditorRows", Dock = DockStyle.Fill,
                 ColumnCount = 2, RowCount = 0, BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty };
-            if (parent is Form && parent.GetType().Name is "GXDLMSMBusSlavePortSetupView" or "GXDLMSUtilityTablesView" or "GXDLMSIp4SetupView")
-                table.MaximumSize = new Size(Scale(parent, 800), 0);
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, labelWidth));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             var pending = new HashSet<Control>(children);
@@ -340,6 +338,7 @@ namespace Gurux.DLMS.UI
                         line.ColumnStyles.Add(new ColumnStyle(fixedWidth ? SizeType.Absolute : SizeType.Percent, fixedWidth ? width : 100));
                         Place(row[i], line, i, 0);
                     }
+                    EditorLayoutPolicy.ConfigurePropertyTable(line, boundSection: false);
                     table.Controls.Add(line, 0, index); table.SetColumnSpan(line, 2);
                 }
             }
@@ -356,18 +355,51 @@ namespace Gurux.DLMS.UI
             }
             minimumHeight += parent.Padding.Vertical;
             if (parent is GroupBox) minimumHeight += parent.Font.Height + Scale(parent, 12);
+            double logicalMinimum = minimumHeight * 96d / parent.DeviceDpi;
+            double logicalAbsoluteRows = table.RowStyles.Cast<RowStyle>().Where(r => r.SizeType == SizeType.Absolute).Sum(r => r.Height) * 96d / table.DeviceDpi;
+            bool fittingSurface = false;
+            void FitSurface()
+            {
+                if (fittingSurface || table.IsDisposed || parent.IsDisposed) return;
+                fittingSurface = true;
+                try
+                {
+                    int absoluteRows = (int)Math.Round(table.RowStyles.Cast<RowStyle>().Where(r => r.SizeType == SizeType.Absolute).Sum(r => r.Height));
+                    int required = (int)Math.Round((logicalMinimum - logicalAbsoluteRows) * parent.DeviceDpi / 96d) + absoluteRows;
+                    if (parent is Form || parent is TabPage)
+                    {
+                        int available = Math.Max(1, parent.ClientSize.Height - parent.Padding.Vertical);
+                        table.Height = stretches ? Math.Max(available, required - parent.Padding.Vertical) : required - parent.Padding.Vertical;
+                    }
+                    else if (parent.Parent is TableLayoutPanel outer)
+                    {
+                        int row = outer.GetRow(parent);
+                        if (row >= 0 && row < outer.RowStyles.Count && outer.RowStyles[row].SizeType == SizeType.Absolute)
+                        {
+                            int height = required + Scale(parent, 8);
+                            if (Math.Abs(outer.RowStyles[row].Height - height) > 1) outer.RowStyles[row].Height = height;
+                        }
+                    }
+                }
+                finally { fittingSurface = false; }
+            }
             if (parent is Form || parent is TabPage)
             {
-                var scroll = (ScrollableControl)parent;
-                scroll.AutoScroll = true;
+                ((ScrollableControl)parent).AutoScroll = true;
                 table.Dock = DockStyle.Top;
-                void FitSurface()
-                {
-                    int available = Math.Max(1, parent.ClientSize.Height - parent.Padding.Vertical);
-                    table.Height = stretches ? Math.Max(available, minimumHeight - parent.Padding.Vertical) : minimumHeight - parent.Padding.Vertical;
-                }
-                parent.SizeChanged += (_, _) => FitSurface();
-                FitSurface();
+            }
+            table.Layout += (_, _) => FitSurface();
+            parent.SizeChanged += (_, _) => FitSurface();
+            parent.ParentChanged += (_, _) => FitSurface();
+            FitSurface();
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
+            foreach (var adaptive in table.Controls.OfType<GXValueField>())
+            {
+                int row = table.GetRow(adaptive);
+                if (table.GetColumn(adaptive) == 1 && row >= 0 && row < table.RowStyles.Count &&
+                    table.RowStyles[row].SizeType == SizeType.Absolute && table.GetControlFromPosition(0, row) is Label caption)
+                    ConfigureValueRow(table, row, caption, adaptive,
+                        (int)Math.Round(table.RowStyles[row].Height * 96d / table.DeviceDpi));
             }
             parent.PerformLayout();
             return new EditorExtent(minimumHeight + Scale(parent, 8), stretches);

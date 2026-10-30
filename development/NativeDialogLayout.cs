@@ -74,6 +74,7 @@ namespace Gurux.DLMS.UI
         {
             var rows = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 2, Margin = Padding.Empty, Padding = Padding.Empty };
             rows.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            EditorLayoutPolicy.ConfigurePropertyTable(rows);
             return rows;
         }
         private static void Row(TableLayoutPanel rows, Control caption, Control editor)

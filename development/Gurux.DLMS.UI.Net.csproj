@@ -16,7 +16,7 @@
     <EnableDefaultItems>false</EnableDefaultItems>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
-  <ItemGroup><Compile Include="ApplicationTypography.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="ApplicationTypography.cs" /><Compile Include="EditorLayoutPolicy.cs" /><Compile Include="NativePropertyDialog.cs" /></ItemGroup>
   <ItemGroup><Compile Include="ModernPresentation.ObjectEditors.cs" /><Compile Include="ModernPresentation.NativeCombo.cs" /><Compile Include="GXObjectReferenceView.cs" /></ItemGroup>
   <ItemGroup>
     <Compile Include="Custom\GXDLMSUnixTimeView.cs">

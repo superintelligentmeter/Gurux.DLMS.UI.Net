@@ -38,6 +38,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            EditorLayoutPolicy.ConfigurePropertyTable(table);
             parent.Controls.Add(table);
             return table;
         }

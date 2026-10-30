@@ -1,0 +1,18 @@
+# Complete offline property-layout audit
+
+This layout-only workflow reuses the safe constructors and production binding in `UiReviewTests` and `UiDialogReviewTests`. Existing behavioral modes remain unchanged. It does not invoke meter commands, external services, preference saves, key generation or global input.
+
+Build both harnesses in Release. Combine their `bin/Release/net10.0-windows` outputs in a temporary snapshot, then run `tests/Invoke-UiLayoutAudit.ps1 -Binaries <snapshot> -Output <fresh-artifact-directory>`. The runner discovers all compiled object views and supporting dialogs and runs at most two isolated processes. Each case has a 90-second timeout and retains partial results on failure. `-Filter Name[,Name]` supports targeted confirmation.
+
+The object matrix contains every blank and representative model, plus structured Data, populated PPP LCP/IPCP options, and populated IPv4 multicast/IP-options. Every currently connected physical monitor is used. The viewport targets are 1500×900 and 620×560, followed by restored-wide sizing, every tab with its ancestors, and top/bottom/intermediate native scrolling. Fixed supporting dialogs retain their supported dimensions and record the requested size separately. No unconnected DPI is simulated or claimed.
+
+`LayoutMetrics.cs` records scalar, structured, flexible-data, compound reference, caption and native-control roles. GXValueField classification uses active `RequiresStructuredLayout` and real attribute metadata; dormant children do not count as visible field types. It records bounds, table columns, clipping, font family/size/style and colors without changing them. Dialog windows use no-activation styles and opacity 0. Object hosts are likewise nonactivating and invisible on real monitor coordinates.
+
+Run `python tests/analyze_layout.py <artifacts> --policy tests/ui-layout-policy.json --baseline <initial-artifacts>` to produce independent width/alignment/label/height/reachability checks and appearance comparisons. The policy ledger must include every compiled screen and explicitly identify compact compound groups, structured data, grids, lists, trees and document/key areas. The current rule is 800 logical pixels per ordinary section, 144-pixel caption columns adapting to 100, and 640-pixel scalar field/action cells. Measured geometry candidates require source or rendered confirmation; scrollable content outside a viewport is not automatically a defect.
+
+`Make-UiLayoutContactSheets.ps1 -Output <artifacts>` produces wide/narrow screenshot montages, separating object views and dialogs, with an index back to source captures. Artifacts and fixture values stay outside production assets and portable documentation. The portable screen ledger contains only screen names, layout roles, named exceptions, pass/fail and observed DPI.
+
+The 2026-10-30 workstation exposed only its 120 DPI display during this run. Earlier 96/120 suites are historical evidence; this audit explicitly marks 96 DPI unavailable. The DLMS assembly SHA256 is recorded separately from the UI assembly so layout changes cannot silently substitute protocol code.
+
+
+After a full pass and scoped corrections, the accepted manifest may replace matching case identifiers with their latest targeted results. Keep each original result and screenshot in its original artifact directory. The analyzer exports a portable per-screen ledger with the actual assembly hash, observed DPI, explicit exceptions and pass/fail; a filtered run alone is not complete screen coverage. Native list/choice height and zero-width scalar checks complement caption, column, structured-row and reachability checks.

@@ -23,7 +23,7 @@ internal static class Program
     static int Main(string[] args)
     {
         if (args.Length < 2) return 64;
-        if (args[0] == "worker") return Worker(args[1], args[2], args.Length > 3, args.Length > 3 && args[3] == "combos");
+        if (args[0] == "worker") return Worker(args[1], args[2], args.Length > 3, args.Length > 3 && args[3] == "combos", args.Length > 3 && args[3] == "layout", args.Length > 4 ? int.Parse(args[4]) : -1);
         string output = Path.GetFullPath(args[1]); Directory.CreateDirectory(output);
         File.WriteAllText(Path.Combine(output, "ui-assembly.sha256"), Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Ui.Location))) + "  " + Ui.Location);
         var results = new List<DialogResultRecord>();
@@ -51,7 +51,7 @@ internal static class Program
         File.WriteAllText(Path.Combine(output, "coverage.txt"), string.Join(Environment.NewLine, results.Select(r => r.Type + ": " + (r.Error.Length == 0 ? "Rendered " + r.Captures.Count + " states; actions=" + r.Accept + "/" + r.Cancel : r.Error))) + Environment.NewLine + "Offline fixtures only. No meter, network, certificate request, real key store or user preferences are modified. Geometry warnings are review candidates. Native bitmap limitations apply; no claim of screen-reader or all protocol workflow coverage.");
         return results.Any(r => r.Error.Length != 0) ? 1 : 0;
     }
-    static int Worker(string typeName, string folder, bool monitors, bool combos)
+    static int Worker(string typeName, string folder, bool monitors, bool combos, bool layout = false, int monitor = -1)
     {
         var record = new DialogResultRecord { Type = typeName };
         try
@@ -64,6 +64,14 @@ internal static class Program
             foreach (PropertyInfo p in settings.GetProperties().Where(p => p.CanWrite && p.GetIndexParameters().Length == 0 && p.PropertyType == typeof(string))) p.SetValue(defaults, "");
             Type type = Ui.GetType(typeName, true)!;
             using Form form = CreateDialog(type, folder);
+            if (layout)
+            {
+                record.LayoutAudit = true;
+                record.AssemblySha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Ui.Location)));
+                LayoutDialog(form, folder, record, monitor);
+                File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(record, Json));
+                return 0;
+            }
             // Production applies typography at Application.Idle; this bounded manual pump does not.
             ApplicationTypography.Apply(form);
             form.AutoValidate = AutoValidate.Disable; form.ShowInTaskbar = false;
@@ -154,6 +162,55 @@ internal static class Program
         File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(record, Json));
         return record.Error.Length == 0 ? 0 : 1;
     }
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
+    static extern int GetWindowLong(IntPtr window, int index);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongW")]
+    static extern int SetWindowLong(IntPtr window, int index, int value);
+
+    static void LayoutDialog(Form form, string folder, DialogResultRecord record, int monitor)
+    {
+        var screen = Screen.AllScreens[Math.Max(0, monitor)];
+        record.Monitor = screen.DeviceName;
+        form.AutoValidate = AutoValidate.Disable; form.ShowInTaskbar = false; form.Opacity = 0;
+        form.StartPosition = FormStartPosition.Manual;
+        form.Location = new(screen.WorkingArea.Left + 20, screen.WorkingArea.Top + 20);
+        SetWindowLong(form.Handle, -20, GetWindowLong(form.Handle, -20) | 0x08000000 | 0x00000080);
+        form.Show(); Pump(); Pump(); ApplicationTypography.Apply(form); form.PerformLayout(); Pump();
+        record.Resizable = form.FormBorderStyle is FormBorderStyle.Sizable or FormBorderStyle.SizableToolWindow;
+        var tabs = Descendants(form).OfType<TabControl>().ToArray();
+        var selected = tabs.ToDictionary(t => t, t => t.SelectedIndex);
+        void CapturePosition(string variant)
+        {
+            var scrolls = Descendants(form).Prepend(form).OfType<ScrollableControl>().Where(s => s.Visible && s.AutoScroll).ToArray();
+            foreach (var s in scrolls) s.AutoScrollPosition = Point.Empty;
+            form.PerformLayout(); Pump(); Capture(form, folder, variant, record);
+            if (scrolls.Any(s => s.VerticalScroll.Visible))
+            {
+                foreach (var s in scrolls.Where(s => s.VerticalScroll.Visible)) s.AutoScrollPosition = new(0, int.MaxValue);
+                Pump(); Capture(form, folder, variant + "-bottom", record);
+                foreach (var s in scrolls) s.AutoScrollPosition = Point.Empty;
+            }
+        }
+        foreach (var size in new[] { new Size(1500, 900), new Size(620, 560), new Size(1500, 900) }.Select((value, index) => (value, index)))
+        {
+            record.RequestedWidth = size.value.Width;
+            if (record.Resizable) { form.ClientSize = size.value; Pump(); form.ClientSize = size.value; form.PerformLayout(); Pump(); }
+            string suffix = size.index == 2 ? "-restored" : "";
+            foreach (var initial in selected) initial.Key.SelectedIndex = initial.Value;
+            CapturePosition(size.value.Width + "-default" + suffix);
+            foreach (var tab in tabs)
+            for (int index = 0; index < tab.TabPages.Count; index++)
+            {
+                foreach (var initial in selected) initial.Key.SelectedIndex = initial.Value;
+                for (Control current = tab.Parent; current != null; current = current.Parent)
+                    if (current is TabPage page) ((TabControl)page.Parent!).SelectedTab = page;
+                tab.SelectedIndex = index; Pump();
+                CapturePosition(size.value.Width + "-tab-" + tab.Name + "-" + index + suffix);
+            }
+        }
+        form.Hide();
+    }
+
     static Form CreateDialog(Type t, string folder)
     {
         var objects = new GXDLMSObjectCollection();
@@ -321,6 +378,11 @@ internal static class Program
         string path = Path.Combine(folder, variant + ".png");
         using var image = new Bitmap(form.Width, form.Height); form.DrawToBitmap(image, new(Point.Empty, image.Size)); image.Save(path);
         var capture = new CaptureRecord { Path = path, Variant = variant, Dpi = form.DeviceDpi, Width = form.ClientSize.Width, Height = form.ClientSize.Height };
+        if (record.LayoutAudit)
+        {
+            capture.RequestedWidth = record.RequestedWidth;
+            capture.LayoutMetrics = LayoutMetrics.Measure(form);
+        }
         foreach (Control c in Descendants(form).Where(c => c.Visible && c.Width > 0 && c.Height > 0))
         {
             if (c is Button or TextBox or ComboBox or CheckBox or RadioButton or Label)
@@ -342,6 +404,7 @@ internal static class Program
             if (buttons[a].RectangleToScreen(buttons[a].ClientRectangle).IntersectsWith(buttons[b].RectangleToScreen(buttons[b].ClientRectangle)))
                 capture.Warnings.Add("Buttons overlap: " + buttons[a].Name + "/" + buttons[b].Name);
         record.Captures.Add(capture);
+        if (record.LayoutAudit) File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(record, Json));
     }
     static void ContactSheets(string output, List<DialogResultRecord> results)
     {
@@ -369,6 +432,6 @@ internal static class Program
         public string Style { get; set; } = ""; public string DrawMode { get; set; } = ""; public string FlatStyle { get; set; } = ""; public bool Enabled { get; set; } public bool DecorativeFrame { get; set; }
         public List<string> Findings { get; set; } = [];
     }
-    public sealed class DialogResultRecord { public string Type { get; set; } = ""; public string Error { get; set; } = ""; public List<ComboSite> ComboSites { get; set; } = []; public List<string> TabOrder { get; set; } = []; public List<string> Assertions { get; set; } = []; public string Accept { get; set; } = ""; public string Cancel { get; set; } = ""; public List<CaptureRecord> Captures { get; set; } = []; }
-    public sealed class CaptureRecord { public string Path { get; set; } = ""; public string Variant { get; set; } = ""; public int Dpi { get; set; } public int Width { get; set; } public int Height { get; set; } public List<ComboMetric> Combos { get; set; } = []; public List<string> Warnings { get; set; } = []; }
+    public sealed class DialogResultRecord { public bool LayoutAudit { get; set; } public string AssemblySha256 { get; set; } = ""; public string Monitor { get; set; } = ""; public bool Resizable { get; set; } public int RequestedWidth { get; set; } public string Type { get; set; } = ""; public string Error { get; set; } = ""; public List<ComboSite> ComboSites { get; set; } = []; public List<string> TabOrder { get; set; } = []; public List<string> Assertions { get; set; } = []; public string Accept { get; set; } = ""; public string Cancel { get; set; } = ""; public List<CaptureRecord> Captures { get; set; } = []; }
+    public sealed class CaptureRecord { public int RequestedWidth { get; set; } public List<LayoutMetric> LayoutMetrics { get; set; } = []; public string Path { get; set; } = ""; public string Variant { get; set; } = ""; public int Dpi { get; set; } public int Width { get; set; } public int Height { get; set; } public List<ComboMetric> Combos { get; set; } = []; public List<string> Warnings { get; set; } = []; }
 }
