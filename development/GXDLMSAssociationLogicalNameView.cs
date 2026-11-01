@@ -1,7 +1,7 @@
 ﻿// superintelligentmeter contributors, 2026-10-30: shared property widths with flexible Association data tabs. GPL-2.0-only; original notices retained.
 // Modified 2026-10-30: constrain Association tabs to their available viewport. GPL-2.0-only.
 // superintelligentmeter, 2026-10-29: preserve live conformance feedback and keep password actions visible at narrow widths. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

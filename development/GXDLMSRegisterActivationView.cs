@@ -1,5 +1,5 @@
 // Modified 2026-10-30: preserve active mask during list refresh deselection. GPL-2.0-only.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

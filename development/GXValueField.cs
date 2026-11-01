@@ -1,6 +1,6 @@
 // superintelligentmeter contributors, 2026-10-30: native dropdown layout without redundant frames. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-29: expose presentation changes and structured-value scrolling. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

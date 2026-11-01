@@ -1,4 +1,4 @@
-// Added for the Intelmeter fork, 2026-10-29. GPL-2.0-only; see ../../LICENSE.
+// Added for the superintelligentmeter fork, 2026-10-29. GPL-2.0-only; see ../../LICENSE.
 // SPDX-License-Identifier: GPL-2.0-only
 // Profile Sort object regression matrix added 2026-10-30 under the same license.
 // Clock native combo regression matrix added 2026-10-30 under the same license.

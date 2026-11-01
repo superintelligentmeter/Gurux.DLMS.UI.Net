@@ -1,5 +1,5 @@
 // superintelligentmeter contributors, 2026-10-30: bind sort-object references without changing the protocol model. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

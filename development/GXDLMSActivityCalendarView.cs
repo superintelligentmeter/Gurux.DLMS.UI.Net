@@ -1,6 +1,6 @@
 ﻿// superintelligentmeter contributors, 2026-10-30: use active week attribute 4 for week editing and removal. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: clear per-attribute change indicators on clean notifications. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

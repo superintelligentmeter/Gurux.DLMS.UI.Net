@@ -1,5 +1,5 @@
 // superintelligentmeter, 2026-10-29: keep the service selector read-only with the rest of the push destination. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

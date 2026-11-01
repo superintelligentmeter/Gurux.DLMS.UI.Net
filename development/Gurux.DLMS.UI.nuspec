@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modified for the Intelmeter fork, 2026-10-16: fork attribution and license packaging. GPL-2.0-only. -->
+<!-- Modified for the superintelligentmeter fork, 2026-10-16: fork attribution and license packaging. GPL-2.0-only. -->
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>Intelmeter.Gurux.DLMS.UI</id>
+        <id>superintelligentmeter.Gurux.DLMS.UI</id>
         <version>$version$</version>
-        <title>Intelmeter fork of Gurux.DLMS.UI</title>
-        <authors>Gurux Ltd; Intelmeter fork contributors</authors>
-        <owners>Intelmeter</owners>
+        <title>superintelligentmeter fork of Gurux.DLMS.UI</title>
+        <authors>Gurux Ltd; superintelligentmeter fork contributors</authors>
+        <owners>superintelligentmeter</owners>
         <license type="expression">GPL-2.0-only</license>
-        <projectUrl>https://github.com/intelmeter/Gurux.DLMS.UI.Net</projectUrl>
+        <projectUrl>https://github.com/superintelligentmeter/Gurux.DLMS.UI.Net</projectUrl>
         <iconUrl>http://www.gurux.org/gurux.ico</iconUrl>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
-        <description>Unofficial Intelmeter .NET 10 fork of the Gurux DLMS user interface library. Not endorsed by Gurux.</description>
+        <description>Unofficial superintelligentmeter .NET 10 fork of the Gurux DLMS user interface library. Not endorsed by Gurux.</description>
         <summary>Purpose of Gurux.DLMS.UI is help to create user interface for DLMS applications.</summary>
         <copyright>Copyright (c) 1998-2017 Gurux Ltd. All rights reserved.</copyright>
         <language>en-US</language>

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained. -->
+<!-- Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained. -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageId>Intelmeter.Gurux.DLMS.UI</PackageId>
-    <Authors>Gurux Ltd; Intelmeter fork contributors</Authors>
-    <Description>Unofficial Intelmeter .NET 10 fork of the Gurux DLMS UI library. Not endorsed by Gurux.</Description>
+    <PackageId>superintelligentmeter.Gurux.DLMS.UI</PackageId>
+    <Authors>Gurux Ltd; superintelligentmeter fork contributors</Authors>
+    <Description>Unofficial superintelligentmeter .NET 10 fork of the Gurux DLMS UI library. Not endorsed by Gurux.</Description>
     <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/intelmeter/Gurux.DLMS.UI.Net</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/intelmeter/Gurux.DLMS.UI.Net</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/superintelligentmeter/Gurux.DLMS.UI.Net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/superintelligentmeter/Gurux.DLMS.UI.Net</RepositoryUrl>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Gurux.DLMS.UI</RootNamespace>

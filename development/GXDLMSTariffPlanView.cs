@@ -1,6 +1,6 @@
 // superintelligentmeter contributors, 2026-10-30: bound repeated tariff intervals without changing their compound columns. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: keep season interval inputs readable in compact editors with shared column headings. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd

@@ -1,4 +1,4 @@
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 // Superintelligent Meter contributors, 2026-11-01: a closing window is hidden and not rescaled for DPI. GPL-2.0-only.
 // Superintelligent Meter contributors, 2026-10-31: the body size follows each window's monitor DPI. GPL-2.0-only.
 using System;

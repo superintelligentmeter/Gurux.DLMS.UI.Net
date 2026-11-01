@@ -1,6 +1,6 @@
 // superintelligentmeter, 2026-10-30: share the adaptive caption rail across ciphering sections. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: resize ciphering controls as native rows and switch whole suite panels. GPL-2.0-only; original notices retained.
-// Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
+// Modified for the superintelligentmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using Gurux.DLMS.ASN;
 using Gurux.DLMS.ASN.Enums;
 using Gurux.DLMS.Ecdsa;
