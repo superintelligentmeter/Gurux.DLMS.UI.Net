@@ -996,7 +996,7 @@
     "ScalarWidthLogical": 640,
     "LabelWidthLogical": 144,
     "MinimumLabelLogical": 100,
-    "Exceptions": "Paired 112/100 metadata and read groups within 800 logical pixels; sort reference flexible; data/capture grids full width",
+    "Exceptions": "Paired 112/100 metadata/read groups share a responsive width budget capped at 800 logical pixels; bounded Sort reference beside Sort mode; top-right Reset/Capture stack; data/capture grids full width",
     "FixtureScope": "Blank and representative; Data additionally structured",
     "Coverage": "Fresh 1500/620 and restored-wide; actual physical DPI recorded per-screen in final ledger"
   },
@@ -1126,7 +1126,7 @@
     "ScalarWidthLogical": 640,
     "LabelWidthLogical": 144,
     "MinimumLabelLogical": 100,
-    "Exceptions": "Structured GXValueField, lists, grids, trees and multiline documents stay flexible",
+    "Exceptions": "Bounded logical-name field; full-width Entries list; right-aligned 128x32-logical-pixel actions with 8-pixel gaps and a measured footer",
     "FixtureScope": "Blank and representative; Data additionally structured",
     "Coverage": "Fresh 1500/620 and restored-wide; actual physical DPI recorded per-screen in final ledger"
   },

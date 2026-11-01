@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-31",
+  "scope": "Device Properties Secured Connections height and combined Ignore SNRM/Certificate row.",
+  "artifactRootName": "secured-dialog-20261031",
+  "installed": {
+    "ui": "CED2ACEA7BCDBFC97638B4AFF61F9F4C295950C5F998F9AA85F9A3C972B170E9",
+    "director": "111387F5661848328FB7BF951523EFEB1BFCA6E91E3878127E424850BB952A27",
+    "protocol": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  },
+  "usualExecutableUpdated": true,
+  "fixes": [
+    "Keep original Ignore SNRM checkbox and Certificate button in one measured row, with 12-logical-pixel minimum separation, original fonts/colors/handlers and forward tab order.",
+    "Use a two-row secured-page host: a flexible ciphering viewport and an explicitly measured Invocation Counter section. Preserve its original width and editors; keep OK/Cancel outside the page.",
+    "Increase initial dialog client height to 600 logical pixels, then grow to measured visible ciphering content where needed. Clamp window size/location to the current monitor work area with a 16-logical-pixel height allowance; keep native scrolling when taller signing content cannot fit."
+  ],
+  "verification": {
+    "renderedStates": 79,
+    "passingAssertions": 1197,
+    "securedStates": 34,
+    "physicalDpi": [
+      96,
+      120
+    ],
+    "noScrollbarStates": 16,
+    "screenCappedFallbackStates": 18,
+    "settingsSaveAttempts": 0,
+    "mode": "Real modal ShowDialog with production typography, every device tab, Suite0/signing-key branches, physical monitor round trips and minimize/restore.",
+    "builds": "Enabled and feature-free builds: zero errors, 44 existing app warnings.",
+    "evidence": [
+      "confirmed/secured-layout-review.json",
+      "confirmed/rendered-review.json",
+      "confirmed/settings-write-guard.json",
+      "confirmed.log"
+    ]
+  },
+  "notes": [
+    "The standard Secured Connections mode has no vertical scrollbar on either actual display. The larger signing-key branch uses scrolling only at the monitor-height cap on the125% display; its lower selectors remain reachable, while Invocation Counter and OK/Cancel stay visible.",
+    "Root inspected standard and signing/narrow-height native renders. All strict existing host geometry checks and the new row/work-area/counter checks pass. No certificate generation, key changes, network operations or user settings/file writes were invoked.",
+    "The first isolated trial in verified/ let an AutoSize row collapse Invocation Counter despite weaker checks passing. It was rejected during visual review; confirmed/ adds explicit nonzero-height and full-counter-field containment assertions. The unaccepted trial was not installed or relabeled.",
+    "Both installed assemblies match the confirmed test copy. Existing fonts/colors, control handlers and dlms.net retained. Earlier full button matrices keep their actual historical hashes. Native bitmap/test-host limitations apply. No commit or push."
+  ]
+}

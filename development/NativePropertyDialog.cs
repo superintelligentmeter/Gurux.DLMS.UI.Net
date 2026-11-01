@@ -45,7 +45,9 @@ namespace Gurux.DLMS.UI
             group.SuspendLayout();
             try
             {
-                group.Padding = new Padding(S(group, 10));
+                // Keep the semantic group and its Visible/Enabled ownership, while
+                // giving nested scalar rows the same left rail as their outer rows.
+                group.Padding = new Padding(0, S(group, 10), S(group, 10), S(group, 10));
                 Rows(group, definitions);
                 group.AutoSize = true;
                 group.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -87,6 +89,9 @@ namespace Gurux.DLMS.UI
             }
             parent.Controls.Add(table);
             EditorLayoutPolicy.ConfigurePropertyTable(table);
+            foreach (var group in definitions.Select(pair => pair.Editor).OfType<GroupBox>())
+                foreach (var nested in group.Controls.OfType<TableLayoutPanel>().Where(c => c.Name == "NativePropertyRows"))
+                    EditorLayoutPolicy.ShareLabelColumn(nested, table);
             return table;
         }
 

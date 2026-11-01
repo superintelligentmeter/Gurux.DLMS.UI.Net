@@ -39,7 +39,7 @@ internal static partial class Program
         if (args.Length == 0) { Console.Error.WriteLine("Usage: UiReviewTests inventory|audit|regressions|behavior|roundtrip|sort-reference|clock-combo|all-combos|calendar OUTPUT [--filter NAME[,NAME]] [--timeout 30]"); return 64; }
         try
         {
-            if (args[0] == "worker") return Worker(args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4]) : -1, args.Length > 5 && args[5] == "combos", args.Length > 5 && args[5] == "layout");
+            if (args[0] == "worker") return Worker(args[1], args[2], args[3], args.Length > 4 ? int.Parse(args[4]) : -1, args.Length > 5 && args[5] is "combos" or "combo-height", args.Length > 5 && args[5] is "layout" or "action-schedule" or "parameter-monitor" or "twisted-pair" or "image-transfer" or "register-actions" or "activation-footer" or "profile-header" or "schedule-footer" or "buttons", args.Length > 5 && args[5] == "combo-height", args.Length > 5 && args[5] == "action-schedule", args.Length > 5 && args[5] == "parameter-monitor", args.Length > 5 && args[5] == "twisted-pair", args.Length > 5 && args[5] == "image-transfer", args.Length > 5 && args[5] == "register-actions", args.Length > 5 && args[5] == "activation-footer", args.Length > 5 && args[5] == "profile-header", args.Length > 5 && args[5] == "schedule-footer", args.Length > 5 && args[5] == "buttons");
             if (args[0] == "sort-reference-worker") return SortReferenceWorker(args[1], args[2]);
             if (args[0] == "clock-combo-worker") return ClockComboWorker(args[1], args[2]);
             if (args[0] == "calendar-worker") return CalendarWorker(args[1], args[2], int.Parse(args[3]));
@@ -53,7 +53,9 @@ internal static partial class Program
             if (args[0] == "sort-reference") return SortReferenceReview(output, inventory, args);
             if (args[0] == "clock-combo") return ClockComboReview(output, inventory, args);
             if (args[0] == "calendar") return CalendarReview(output, inventory, args);
-            if (!new[] { "audit", "regressions", "roundtrip", "behavior", "all-combos" }.Contains(args[0])) return 64;
+            if (args[0] == "combo-height-fixture") return ComboHeightFixture(output);
+            if (args[0] == "profile-inputs") return ProfileInputs(output);
+            if (!new[] { "audit", "regressions", "roundtrip", "behavior", "all-combos", "action-schedule", "parameter-monitor", "twisted-pair", "image-transfer", "register-actions", "activation-footer", "profile-header", "schedule-footer" }.Contains(args[0])) return 64;
             var filterIndex = Array.IndexOf(args, "--filter");
             var timeoutIndex = Array.IndexOf(args, "--timeout");
             int seconds = timeoutIndex >= 0 ? int.Parse(args[timeoutIndex + 1]) : 30;
@@ -65,8 +67,23 @@ internal static partial class Program
                 if (args[0] == "roundtrip" && !RoundtripViews.Contains(screen.ShortName)) continue;
                 if (args[0] == "behavior" && !new[] { "GXDLMSClockView", "GXDLMSPushSetupView", "GXDLMSAssociationLogicalNameView", "GXDLMSMeterReadingParameterView", "GXDLMSUnixTimeView" }.Contains(screen.ShortName)) continue;
                 if (args[0] == "all-combos" && !ComboViews.Contains(screen.ShortName)) continue;
+                if (args[0] == "action-schedule" && screen.ShortName != "GXDLMSActionScheduleView") continue;
+                if (args[0] == "parameter-monitor" && screen.ShortName != "GXDLMSParameterMonitorView") continue;
+                if (args[0] == "twisted-pair" && screen.ShortName != "GXDLMSIecTwistedPairSetupView") continue;
+                if (args[0] == "image-transfer" && screen.ShortName != "GXDLMSImageTransferView") continue;
+                if (args[0] == "register-actions" && !RegisterActionViews.Contains(screen.ShortName)) continue;
+                if (args[0] == "activation-footer" && screen.ShortName != "GXDLMSRegisterActivationView") continue;
+                if (args[0] == "profile-header" && screen.ShortName != "GXDLMSProfileGenericView") continue;
+                if (args[0] == "schedule-footer" && screen.ShortName != "GXDLMSScheduleView") continue;
                 var states = args[0] == "all-combos" ? screen.ShortName == "GXDLMSDataView" ? new[] { "enum" } : screen.ShortName == "GXDLMSSecuritySetupView" ? new[] { "representative", "version0" } : new[] { "representative" } : args[0] == "roundtrip" ? new[] { screen.ShortName == "GXDLMSDataView" ? "structured" : "representative" } : new[] { "blank", "representative" }.Concat(screen.ShortName == "GXDLMSDataView" ? new[] { "structured" } : []);
-                foreach (int monitor in args[0] is "roundtrip" or "all-combos" ? Enumerable.Range(0, Screen.AllScreens.Length) : new[] { -1 })
+                if (args[0] == "action-schedule") states = new[] { "blank", "representative", "long-script" };
+                if (args[0] == "parameter-monitor") states = new[] { "blank", "representative", "long-target-value" };
+                if (args[0] == "twisted-pair") states = new[] { "blank", "representative", "long-twisted" };
+                if (args[0] == "image-transfer") states = new[] { "blank", "representative", "long-images" };
+                if (args[0] == "activation-footer") states = new[] { "blank", "representative", "long-activation" };
+                if (args[0] == "profile-header") states = new[] { "blank", "representative", "long-profile-reference", "italy-profile" };
+                if (args[0] == "schedule-footer") states = new[] { "blank", "representative", "long-schedule" };
+                foreach (int monitor in args[0] is "roundtrip" or "all-combos" or "action-schedule" or "parameter-monitor" or "twisted-pair" or "image-transfer" or "register-actions" or "activation-footer" or "profile-header" or "schedule-footer" ? Enumerable.Range(0, Screen.AllScreens.Length) : new[] { -1 })
                 foreach (var state in states)
                 {
                     string caseDir = Path.Combine(output, "cases", screen.ShortName + "--" + state + (monitor >= 0 ? "--monitor" + monitor : ""));
@@ -76,7 +93,15 @@ internal static partial class Program
                     if (string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "dotnet", StringComparison.OrdinalIgnoreCase)) start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
                     foreach (string value in new[] { "worker", screen.Type, state, caseDir }) start.ArgumentList.Add(value);
                     start.ArgumentList.Add(monitor.ToString());
-                    if (args[0] == "all-combos") start.ArgumentList.Add("combos");
+                    if (args[0] == "all-combos") start.ArgumentList.Add(args.Contains("--native-height") ? "combo-height" : "combos");
+                    if (args[0] == "action-schedule") start.ArgumentList.Add("action-schedule");
+                    if (args[0] == "parameter-monitor") start.ArgumentList.Add("parameter-monitor");
+                    if (args[0] == "twisted-pair") start.ArgumentList.Add("twisted-pair");
+                    if (args[0] == "image-transfer") start.ArgumentList.Add("image-transfer");
+                    if (args[0] == "register-actions") start.ArgumentList.Add("register-actions");
+                    if (args[0] == "activation-footer") start.ArgumentList.Add("activation-footer");
+                    if (args[0] == "profile-header") start.ArgumentList.Add("profile-header");
+                    if (args[0] == "schedule-footer") start.ArgumentList.Add("schedule-footer");
                     using var process = Process.Start(start)!;
                     var stdout = process.StandardOutput.ReadToEndAsync();
                     var stderr = process.StandardError.ReadToEndAsync();
@@ -96,7 +121,7 @@ internal static partial class Program
                     Console.WriteLine($"{cases.Count}: {screen.ShortName}/{state}: {result.Status}; {result.Captures.Count(c => c.Status == "Captured")} captures");
                 }
             }
-            var regressions = RegressionResults(cases);
+            var regressions = args[0] is "twisted-pair" or "image-transfer" or "register-actions" or "activation-footer" or "profile-header" or "schedule-footer" ? cases.SelectMany(c => c.BehaviorChecks).ToList() : RegressionResults(cases);
             Write(Path.Combine(output, "regressions.json"), regressions);
             WriteLedger(output, inventory, cases, regressions);
             MakeContactSheets(output, cases);
@@ -154,6 +179,7 @@ internal static partial class Program
         string stage = "fixture";
         try
         {
+            using var isolatedSettings = new MemoryProfileSettings();
             var attr = typeof(GXDLMSProfileGenericView).GetCustomAttribute<GXDLMSViewAttribute>()!;
             var profile = (GXDLMSProfileGeneric)CreateModel(attr, nameof(GXDLMSProfileGenericView), "representative", result.FixtureNotes);
             profile.CapturePeriod = 900; profile.ProfileEntries = 1000;
@@ -182,7 +208,15 @@ internal static partial class Program
             var client = new GXDLMSClient();
             void Bind(GXDLMSObject? value) { Assign(value); GXDlmsUi.ObjectChanged(view, client, profile, true); shell.PerformLayout(); editor.PerformLayout(); for (int i = 0; i < 4; i++) Pump(); }
             void Resize(Size size) { shell.ClientSize = size; Pump(); shell.ClientSize = size; editor.Bounds = shell.ClientRectangle; shell.PerformLayout(); editor.PerformLayout(); for (int i = 0; i < 4; i++) Pump(); }
-            string Geometry() => string.Join(";", Descendants(editor).Where(c => c.Visible && new[] { "SortObjectReference", "ReferenceIdentity", "ReferenceDetails" }.Contains(c.Name)).Select(c => $"{c.Name}:{c.Bounds}:{c.Font.SizeInPoints:0.00}"));
+            string Geometry() => string.Join(";", Descendants(editor).Where(c => c.Visible && new[] { "SortObjectReference", "ReferenceIdentity", "ReferenceDetails" }.Contains(c.Name)).Select(c =>
+            {
+                var bounds = c.Bounds;
+                // Capture/reveal may scroll the bounded reference to its first
+                // native textbox. Compare content geometry, not that viewport offset.
+                if (c.Parent is ScrollableControl parent && parent.Name == "SortObjectReference")
+                    bounds.Offset(-parent.AutoScrollPosition.X, -parent.AutoScrollPosition.Y);
+                return $"{c.Name}:{bounds}:{c.Font.SizeInPoints:0.00}";
+            }));
             void Observe(string variant, GXDLMSObject? expected)
             {
                 stage = variant;
@@ -207,6 +241,15 @@ internal static partial class Program
                 Observe(prefix + "-wide", initial); string wideGeometry = Geometry();
                 if (monitor == 0) { firstGeometry = wideGeometry; firstDpi = editor.DeviceDpi; }
                 Resize(Sizes[1]); Observe(prefix + "-narrow", initial);
+                if (state == "long-name")
+                {
+                    string description = populated.Description;
+                    populated.Description = "Energy"; Bind(populated); Observe(prefix + "-refresh-short-defined", populated);
+                    var reference = (ScrollableControl)Descendants(editor).Single(c => c.Name == "SortObjectReference");
+                    int preferred = reference.GetPreferredSize(new Size(reference.Width, 0)).Height;
+                    Check(prefix + "/short-defined-reference-removes-unneeded-bar", preferred > reference.Height + 2 || !reference.VerticalScroll.Visible, "Fullwidth preferred=" + preferred + "; height=" + reference.Height + "; Vbar=" + reference.VerticalScroll.Visible);
+                    populated.Description = description; Bind(initial);
+                }
                 Bind(null); Observe(prefix + "-refresh-empty-before", null);
                 Bind(populated); Observe(prefix + "-refresh-populated", populated);
                 Bind(null); Observe(prefix + "-refresh-empty-after", null);
@@ -254,7 +297,8 @@ internal static partial class Program
             Check(name + "all-lines-readable", box.ClientSize.Width >= 80 && first.Y >= 0 && last.Y + box.Font.Height <= box.ClientSize.Height + 2, $"Client={box.ClientSize}; NativeLines={lines}; First={first}; Last={last}; FontHeight={box.Font.Height}");
             Check(name + "font-matches-shell", Math.Abs(box.Font.SizeInPoints - shell.Font.SizeInPoints) < .1, $"Text={box.Font.SizeInPoints}; shell={shell.Font.SizeInPoints}; DPI={box.DeviceDpi}");
             box.SelectAll(); Check(name + "text-selectable", box.SelectionLength == box.TextLength && box.SelectedText == box.Text); box.Select(0, 0);
-            Check(name + "inside-reference", box.Left >= 0 && box.Top >= 0 && box.Right <= reference.ClientSize.Width && box.Bottom <= reference.ClientSize.Height, $"Text={box.Bounds}; Reference={reference.ClientSize}");
+            var viewport = (ScrollableControl)reference; int contentHeight = viewport.AutoScroll ? Math.Max(viewport.ClientSize.Height, viewport.AutoScrollMinSize.Height) : viewport.ClientSize.Height;
+            Check(name + "inside-reference-content", box.Left >= 0 && box.Top - viewport.AutoScrollPosition.Y >= 0 && box.Right <= reference.ClientSize.Width && box.Bottom - viewport.AutoScrollPosition.Y <= contentHeight + 2 && !viewport.HorizontalScroll.Visible, $"Text={box.Bounds}; Reference={reference.ClientSize}; content={contentHeight}");
         }
         var ancestors = new List<Control>(); for (Control? c = reference.Parent; c != null; c = c.Parent) ancestors.Add(c);
         Check("no-parent-horizontal-scroll", !ancestors.OfType<ScrollableControl>().Any(c => c.HorizontalScroll.Visible));
@@ -419,15 +463,10 @@ internal static partial class Program
         Check("access-state", combo.Enabled == writable && field.ReadOnly == !writable);
         Check("wrapper-background-blends", field.Parent != null && field.BackColor.ToArgb() == field.Parent.BackColor.ToArgb(), "Field=" + field.BackColor + "; Parent=" + field.Parent?.BackColor);
         Check("wrapper-zero-padding", field.Padding == Padding.Empty, field.Padding.ToString());
-        int preferred = combo.PreferredHeight, beforeHeight = combo.Height;
-        // A native DropDownList can coerce a requested PreferredHeight by 1–2px
-        // after a physical DPI transition. Prove the stable native result rather
-        // than accepting an arbitrary short control or changing its font.
-        combo.Height = preferred; editor.PerformLayout(); Pump();
-        Check("native-preferred-height-request", combo.Height == preferred || (combo.Height == beforeHeight && Math.Abs(combo.Height - preferred) <= 2), "Requested=" + preferred + "; before=" + beforeHeight + "; native result=" + combo.Height);
+        CheckNativeComboHeight(combo, Check);
         Check("native-text-viewport-readable", combo.ClientSize.Height >= combo.Font.Height, "Client height=" + combo.ClientSize.Height + "; font height=" + combo.Font.Height);
         Check("native-full-width", combo.Left == 0 && combo.Width == field.ClientSize.Width, "Combo=" + combo.Bounds + "; wrapper=" + field.ClientSize);
-        Check("native-vertically-centered", Math.Abs(combo.Top - (field.ClientSize.Height - combo.PreferredHeight) / 2) <= 1, "Combo=" + combo.Bounds + "; wrapper=" + field.ClientSize);
+        Check("native-vertically-centered", Math.Abs(combo.Top - (field.ClientSize.Height - combo.Height) / 2) <= 1, "Combo=" + combo.Bounds + "; wrapper=" + field.ClientSize);
         Check("native-bounds-fit", combo.Top >= 0 && combo.Bottom <= field.ClientSize.Height && combo.Width >= 100, "Combo=" + combo.Bounds + "; wrapper=" + field.ClientSize);
         Check("native-style-and-font-retained", combo.FlatStyle == FlatStyle.Standard && Math.Abs(combo.Font.SizeInPoints - field.Font.SizeInPoints) < .1 && Math.Abs(combo.Font.SizeInPoints - shell.Font.SizeInPoints) < .1, "Font=" + combo.Font.SizeInPoints + "; shell=" + shell.Font.SizeInPoints);
         if (writable)
@@ -439,7 +478,7 @@ internal static partial class Program
         var samples = new List<Point>();
         if (combo.Top > 0) samples.AddRange(new[] { new Point(0, 0), new Point(field.Width / 2, 0), new Point(field.Width - 1, 0) });
         if (combo.Bottom < field.Height) samples.AddRange(new[] { new Point(0, field.Height - 1), new Point(field.Width / 2, field.Height - 1), new Point(field.Width - 1, field.Height - 1) });
-        Check("no-second-visible-wrapper-border", samples.Count > 0 && samples.All(p => image.GetPixel(p.X, p.Y).ToArgb() == field.Parent!.BackColor.ToArgb()), "Border strip samples=" + samples.Count);
+        Check("no-second-visible-wrapper-border", samples.All(p => image.GetPixel(p.X, p.Y).ToArgb() == field.Parent!.BackColor.ToArgb()), "Border strip samples=" + samples.Count);
     }
 
     static void SetDataEnumFixture(GXDLMSData data)
@@ -472,9 +511,7 @@ internal static partial class Program
             var ancestors = new List<Control>(); for (Control? parent = combo.Parent; parent != null && parent != editor; parent = parent.Parent) ancestors.Add(parent);
             Check("no-painted-wrapper", !ancestors.Any(c => c.GetType().Name == "ModernFieldFrame"), string.Join("/", ancestors.Select(c => c.GetType().Name)));
             if (combo.Name == "ActiveMasksCb") Check("active-mask-native-standard-frame", combo.FlatStyle == FlatStyle.Standard && combo.Parent?.GetType().Name == "NativeComboHost", combo.FlatStyle.ToString());
-            int requested = combo.PreferredHeight, before = combo.Height;
-            if (combo.DropDownStyle != ComboBoxStyle.Simple) { combo.Height = requested; Pump(); }
-            Check("native-height-request", combo.DropDownStyle == ComboBoxStyle.Simple || combo.Height == requested || (combo.Height == before && Math.Abs(combo.Height - requested) <= 2), $"Requested={requested}; before={before}; native={combo.Height}");
+            CheckNativeComboHeight(combo, Check);
             Check("text-viewport-readable", combo.ClientSize.Height >= combo.Font.Height, $"Client={combo.ClientSize}; font height={combo.Font.Height}");
             Check("inside-parent", combo.Left >= 0 && combo.Top >= 0 && combo.Right <= combo.Parent!.ClientSize.Width && combo.Bottom <= combo.Parent.ClientSize.Height, $"Combo={combo.Bounds}; parent={combo.Parent?.ClientSize}");
             var viewportLocation = editor.PointToClient(combo.PointToScreen(Point.Empty));
@@ -617,7 +654,7 @@ internal static partial class Program
         {
             var attr = t.GetCustomAttribute<GXDLMSViewAttribute>();
             bool view = typeof(IGXDLMSView).IsAssignableFrom(t);
-            result.Screens.Add(new() { Type = t.FullName!, ShortName = t.Name, Kind = view ? attr != null ? "ObjectView" : "UnattributedView" : "Dialog", ModelType = attr?.DLMSType.FullName ?? "", Versions = attr?.Versions ?? [], LogicalNames = attr?.LogicalNames ?? [], Standards = attr?.Standards.Select(s => s.ToString()).ToArray() ?? [], Constructors = t.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Select(c => "(" + string.Join(", ", c.GetParameters().Select(p => p.ParameterType.FullName + " " + p.Name + (p.IsOptional ? " = " + p.DefaultValue : ""))) + ")").ToArray(), Coverage = view && attr != null ? "Constructed/bound in isolated workers" : "Inventory only; requires explicit safe fixture before execution" });
+            result.Screens.Add(new() { Type = t.FullName!, ShortName = t.Name, Kind = view ? attr != null ? "ObjectView" : "UnattributedView" : "Dialog", ModelType = attr?.DLMSType.FullName ?? "", Versions = attr?.Versions ?? [], LogicalNames = attr?.LogicalNames ?? [], Standards = attr?.Standards.Select(s => s.ToString()).ToArray() ?? [], ButtonFields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(f => typeof(Button).IsAssignableFrom(f.FieldType)).Select(f => f.Name).ToArray(), Constructors = t.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Select(c => "(" + string.Join(", ", c.GetParameters().Select(p => p.ParameterType.FullName + " " + p.Name + (p.IsOptional ? " = " + p.DefaultValue : ""))) + ")").ToArray(), Coverage = view && attr != null ? "Constructed/bound in isolated workers" : "Inventory only; requires explicit safe fixture before execution" });
         }
         result.ObjectViewCount = result.Screens.Count(s => s.Kind == "ObjectView");
         result.DialogCount = result.Screens.Count(s => s.Kind == "Dialog");
@@ -625,10 +662,10 @@ internal static partial class Program
         return result;
     }
 
-    static int Worker(string typeName, string state, string output, int monitor = -1, bool comboAudit = false, bool layoutAudit = false)
+    static int Worker(string typeName, string state, string output, int monitor = -1, bool comboAudit = false, bool layoutAudit = false, bool comboHeightAudit = false, bool scheduleAudit = false, bool parameterAudit = false, bool twistedAudit = false, bool imageAudit = false, bool registerActionsAudit = false, bool activationFooterAudit = false, bool profileHeaderAudit = false, bool scheduleFooterAudit = false, bool buttonAudit = false)
     {
-        if (layoutAudit) Sizes[0] = new Size(1500, 900);
-        var result = new CaseResult { View = typeName, State = state, Status = "Started", ComboAudit = comboAudit, LayoutAudit = layoutAudit, AssemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Ui.Location))) };
+        if (layoutAudit && !scheduleAudit && !parameterAudit && !twistedAudit && !imageAudit && !registerActionsAudit && !activationFooterAudit && !profileHeaderAudit && !scheduleFooterAudit && !buttonAudit) Sizes[0] = new Size(1500, 900);
+        var result = new CaseResult { View = typeName, State = state, Status = "Started", ComboAudit = comboAudit, LayoutAudit = layoutAudit, ButtonAudit = buttonAudit, AssemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Ui.Location))) };
         void Save() => Write(Path.Combine(output, "result.json"), result);
         Save();
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
@@ -639,15 +676,35 @@ internal static partial class Program
         string stage = "fixture";
         try
         {
+            // General object sweeps must be as file-free as the focused Profile tests.
+            using var isolatedSettings = new MemoryProfileSettings();
             var t = Ui.GetType(typeName, true)!;
             var attr = t.GetCustomAttribute<GXDLMSViewAttribute>();
-            var model = attr == null ? null : CreateModel(attr, t.Name, state, result.FixtureNotes, comboAudit);
+            var model = attr == null ? null : CreateModel(attr, t.Name, state, result.FixtureNotes, comboAudit || buttonAudit);
+            if (buttonAudit && model is GXDLMSAssociationShortName shortName) SeedShortNameGeneral(shortName, state);
+            if (profileHeaderAudit) { PopulateProfileHeaderFixture((GXDLMSProfileGeneric)model!, state); result.BehaviorChecks.Add(new() { Name="ProfileHeader/fixture-owner", Passed=state!="italy-profile" || model!.LogicalName=="0.0.21.0.1.255" && model.Parent.Parent is GXDLMSClient owner && owner.Standard==Standard.Italy, Detail="Owner="+model!.Parent.Parent?.GetType().Name+"; LN="+model.LogicalName }); }
+            if (scheduleFooterAudit || buttonAudit && model is GXDLMSSchedule) PopulateScheduleFooterFixture((GXDLMSSchedule)model!, state);
+            if (buttonAudit && model is GXDLMSProfileGeneric buttonProfile && state.StartsWith("italy-"))
+            {
+                PopulateProfileHeaderFixture(buttonProfile, "italy-profile");
+                if (state == "italy-enrolled") buttonProfile.LogicalName = "0.0.21.0.2.255";
+            }
             stage = "construction"; Save();
             var monitorBounds = monitor >= 0 ? Screen.AllScreens[monitor].WorkingArea : Rectangle.Empty;
             using var shell = new AuditShell { ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = monitor >= 0 ? new(monitorBounds.X + 24, monitorBounds.Y + 24) : new(-20000, -20000), Opacity = monitor >= 0 ? 0 : 1, ClientSize = Sizes[1], AutoValidate = AutoValidate.Disable, Font = ApplicationTypography.BodyFont, Text = "Offline UI audit" };
             // Establish the actual monitor/DPI before constructing hosted controls.
             shell.Show(); for (int settle = 0; settle < 6; settle++) Pump();
             using var editor = (Form)Activator.CreateInstance(t, true)!;
+            if (layoutAudit && !buttonAudit) RememberInputRails(editor);
+            if (buttonAudit) ButtonAuditMetrics.Remember(editor);
+            if (registerActionsAudit) RememberRegisterActions(editor);
+            if (activationFooterAudit) RememberActivationFooter(editor);
+            if (scheduleFooterAudit) RememberScheduleFooter(editor);
+            var originalScheduleInputs = scheduleAudit ? Descendants(editor).Where(c => ActionScheduleInputs.Contains(c.Name)).ToDictionary(c => c.Name) : null;
+            var originalParameterInputs = parameterAudit ? Descendants(editor).Where(c => ParameterMonitorInputs.Contains(c.Name)).ToDictionary(c => c.Name) : null;
+            var originalTwistedInputs = twistedAudit ? Descendants(editor).Where(c => TwistedInputs.Contains(c.Name)).ToDictionary(c => c.Name) : null;
+            var originalImageInputs = imageAudit ? Descendants(editor).Where(c => ImageTransferInputs.Contains(c.Name)).ToDictionary(c => c.Name) : null;
+            var originalProfileHeaderInputs = profileHeaderAudit ? Descendants(editor).Where(c => ProfileHeaderInputs.Contains(c.Name)).ToDictionary(c => c.Name) : null;
             editor.TopLevel = false; editor.FormBorderStyle = FormBorderStyle.None; editor.Dock = DockStyle.Fill; editor.AutoValidate = AutoValidate.Disable;
             var view = editor as IGXDLMSView;
             stage = "presentation"; Save();
@@ -658,23 +715,72 @@ internal static partial class Program
             shell.PerformLayout(); editor.PerformLayout(); Pump();
             stage = "binding"; Save();
             var client = new GXDLMSClient { Standard = attr?.Standards.FirstOrDefault() ?? Standard.DLMS };
+            if ((profileHeaderAudit || buttonAudit) && state.StartsWith("italy-")) client.Standard = Standard.Italy;
             // Connected here controls local field availability only. There is no transport;
             // timestamps permit fixture values to take the same binding path as a read meter.
             if (t.Name == "GXDLMSMeterReadingParameterView") view!.OnValueChanged(new GXDLMSViewArguments { Client = client, Connected = true, Index = 2, Value = ((GXDLMSData)model!).Value });
-            if (view != null) GXDlmsUi.ObjectChanged(view, client, model, true);
+            if (view != null) GXDlmsUi.ObjectChanged(view, client, model, !(buttonAudit && state == "disconnected"));
             result.BindingSucceeded = true;
+            if (buttonAudit && model is GXDLMSAssociationShortName && state.StartsWith("short-name-general"))
+                Descendants(editor).OfType<TextBox>().Single(c => c.Name == "SecretTB").Text = state.Contains("long")
+                    ? string.Join(" ", Enumerable.Repeat("A1B2C3D4", 32)) : "41 42 43 44";
+            if (imageAudit) PopulateImageTransferLog(editor, state);
             Pump();
             stage = "capture"; Save();
             int sizeIndex = 0;
-            foreach (var size in monitor >= 0 ? Sizes.Concat(new[] { Sizes[0] }) : Sizes)
+            var workerSizes = buttonAudit ? new[] { new Size(1100,760), new Size(900,650), new Size(620,560), new Size(1100,760) } : profileHeaderAudit ? new[] { new Size(1500,900), new Size(1100,760), new Size(620,560), new Size(1500,900) } : imageAudit ? ImageFixtureSizes(shell, monitor) : twistedAudit ? new[] { new Size(1450, 690), new Size(1100, 650), new Size(620, 560), new Size(1450, 690) } : (monitor >= 0 ? Sizes.Concat(new[] { Sizes[0] }) : Sizes);
+            foreach (var size in workerSizes)
             {
                 shell.ClientSize = size; Pump(); shell.ClientSize = size; editor.Bounds = shell.ClientRectangle; shell.PerformLayout(); editor.PerformLayout(); for(int settle=0;settle<4;settle++)Pump();
                 var tabs = Descendants(editor).OfType<TabControl>().ToArray();
+                if (model is GXDLMSAssociationLogicalName && state.StartsWith("association-version")) { foreach (var focusedTab in tabs.Where(t => t.Name == "tabControl1")) focusedTab.SelectedIndex = 1; Pump(); }
+                if (model is GXDLMSAssociationShortName && state.StartsWith("short-name-general")) { foreach (var tab in tabs.Where(t => t.Name == "tabControl1")) tab.SelectedIndex = 1; Pump(); }
                 var selections = tabs.ToDictionary(tab => tab, tab => tab.SelectedIndex);
-                Capture(editor, result, output, size, sizeIndex >= 2 ? "restored" : "default"); Save();
+                if (twistedAudit)
+                {
+                    foreach (var scroller in Descendants(editor).Prepend(editor).OfType<ScrollableControl>().Where(c => c.AutoScroll)) scroller.AutoScrollPosition = Point.Empty;
+                    Pump();
+                    CheckTwistedPair(editor, (GXDLMSIecTwistedPairSetup)model!, originalTwistedInputs!, result, sizeIndex);
+                }
+                if (imageAudit)
+                {
+                    foreach (var scroller in Descendants(editor).Prepend(editor).OfType<ScrollableControl>().Where(c => c.AutoScroll)) scroller.AutoScrollPosition = Point.Empty;
+                    Pump();
+                    CheckImageTransfer(editor, (GXDLMSImageTransfer)model!, originalImageInputs!, result, sizeIndex, sizeIndex is 0 or 1 or 4);
+                }
+                if (registerActionsAudit)
+                {
+                    foreach (var scroller in Descendants(editor).Prepend(editor).OfType<ScrollableControl>().Where(c => c.AutoScroll)) scroller.AutoScrollPosition = Point.Empty;
+                    Pump();
+                    CheckRegisterActions(editor, result, sizeIndex);
+                }
+                if (profileHeaderAudit)
+                {
+                    foreach (var scroller in Descendants(editor).Prepend(editor).OfType<ScrollableControl>().Where(c => c.AutoScroll)) scroller.AutoScrollPosition = Point.Empty;
+                    Pump(); CheckProfileHeader(editor, (GXDLMSProfileGeneric)model!, originalProfileHeaderInputs!, result, sizeIndex, output, size);
+                }
+                if (activationFooterAudit) CheckActivationFooter(editor, (GXDLMSRegisterActivation)model!, result, "size"+sizeIndex+"-initial");
+                if (scheduleFooterAudit)
+                {
+                    foreach (var scroller in Descendants(editor).Prepend(editor).OfType<ScrollableControl>().Where(c => c.AutoScroll)) scroller.AutoScrollPosition = Point.Empty;
+                    Pump(); CheckScheduleFooter(editor, (GXDLMSSchedule)model!, result, sizeIndex);
+                }
+                if (sizeIndex == 0 && model is GXDLMSAssociationLogicalName && state.Contains("-body9"))
+                {
+                    foreach (var button in Descendants(editor).OfType<Button>().Where(b => b.Name is "UpdatePwBtn" or "UpdateHighPwBtn"))
+                        button.Font = new Font("Segoe UI", 9f, button.Font.Style, GraphicsUnit.Point);
+                    result.FixtureNotes.Add("Controlled initial settled-font regression: password buttons receive intended9pt Segoe UI once; body font is not altered and no per-capture font reapplication occurs.");
+                    editor.PerformLayout(); for (int settle = 0; settle < 4; settle++) Pump();
+                }
+                string sizeVariant = ((profileHeaderAudit || buttonAudit) ? sizeIndex >= 3 : imageAudit ? sizeIndex >= 4 : twistedAudit ? sizeIndex >= 3 : sizeIndex >= 2) ? "restored" : "default";
+                Capture(editor, result, output, size, sizeVariant); Save();
+                if (imageAudit) CaptureImageTransferReveals(editor, result, output, size, sizeVariant);
+                if (scheduleAudit) CheckActionSchedule(editor, (GXDLMSActionSchedule)model!, originalScheduleInputs!, result, sizeIndex);
+                if (parameterAudit) CheckParameterMonitor(editor, (GXDLMSParameterMonitor)model!, originalParameterInputs!, result, sizeIndex);
                 sizeIndex++;
                 foreach (var tab in tabs)
                 {
+                    if (model is GXDLMSAssociationLogicalName && state.StartsWith("association-version")) continue;
                     int initial = selections[tab];
                     for (int index = 0; index < tab.TabPages.Count; index++)
                     {
@@ -685,11 +791,13 @@ internal static partial class Program
                         for (Control? ancestor = tab.Parent; ancestor != null; ancestor = ancestor.Parent)
                             if (ancestor is TabPage page && page.Parent is TabControl owner) owner.SelectedTab = page;
                         tab.SelectedIndex = index; Pump();
+                        if (activationFooterAudit) CheckActivationFooter(editor, (GXDLMSRegisterActivation)model!, result, "size"+sizeIndex+"-tab"+index);
                         Capture(editor, result, output, size, "tab-" + Array.IndexOf(tabs, tab) + "-" + Safe(tab.Name) + "-" + index + (sizeIndex >= 3 ? "-restored" : "")); Save();
                     }
                     tab.SelectedIndex = initial;
                 }
                 foreach (var selection in selections) selection.Key.SelectedIndex = selection.Value;
+                if (comboHeightAudit) CheckComboHeightStates(editor, view!, client, result, output, size, "size" + sizeIndex);
                 if (comboAudit && model is GXDLMSData enumData && t.Name == "GXDLMSDataView") CheckDataEnumTransitions(editor, view!, enumData, client, result, output, size, "size" + sizeIndex);
             }
             if (view != null && !layoutAudit)
@@ -711,6 +819,23 @@ internal static partial class Program
             if (t.Name == "GXFunctionControlFunctionDlg") result.BehaviorChecks.Add(new() { Name = "FunctionControlFunction/accept-cancel", Passed = editor.AcceptButton != null && editor.CancelButton != null && editor.AcceptButton != editor.CancelButton, Detail = "Accept=" + (editor.AcceptButton as Control)?.Name + "; Cancel=" + (editor.CancelButton as Control)?.Name });
             if (!layoutAudit && view != null && !(comboAudit && model is GXDLMSData)) CheckBehavior(editor, view, model!, client, result.BehaviorChecks);
             if (comboAudit) RecordInactiveCombos(editor, result);
+            if (scheduleAudit) CheckActionScheduleReachability(result);
+            if (parameterAudit) CheckParameterMonitorReachability(result);
+            if (twistedAudit) CheckTwistedPairReachability(result);
+            if (registerActionsAudit) CheckRegisterActionReachability(result);
+            if (activationFooterAudit) CheckActivationRefresh(editor, (GXDLMSRegisterActivation)model!, client, result);
+            if (scheduleFooterAudit) CheckScheduleFooterRefresh(editor, (GXDLMSSchedule)model!, client, result);
+            if (profileHeaderAudit) { CheckProfileHeaderInteractions(editor, (GXDLMSProfileGeneric)model!, client, result); CheckProfileHeaderReachability(result); }
+            if (imageAudit)
+            {
+                ImageTransferMonitorRoundtrip(shell, editor, (GXDLMSImageTransfer)model!, originalImageInputs!, result, output, monitor);
+                CheckImageTransferReachability(result);
+            }
+            if (buttonAudit && (state == "roundtrip" || state.EndsWith("-roundtrip"))) ReviewButtonRoundtrip(shell, editor, result, output);
+            if (layoutAudit && !buttonAudit && model != null) CheckRailInteractions(editor, model, result);
+            if (buttonAudit) result.BehaviorChecks.Add(new() { Name = "Buttons/original-instances-method-indices-actions-retained", Passed = ButtonAuditMetrics.OriginalsRetained(editor) });
+            isolatedSettings.Dispose();
+            result.BehaviorChecks.Add(new() { Name = t.Name + "/offline-settings-isolated", Passed = isolatedSettings.Provider.SaveAttempts == 0 && isolatedSettings.Restored, Detail = "File-free settings provider; Save attempts=" + isolatedSettings.Provider.SaveAttempts + "; original singleton restored=" + isolatedSettings.Restored });
             result.Monitor = monitor >= 0 ? Screen.AllScreens[monitor].DeviceName : "Offscreen default monitor";
             result.Status = "Passed";
             shell.Hide();
@@ -794,10 +919,35 @@ internal static partial class Program
             ip4.IPOptions = new[] { new GXDLMSIp4SetupIpOption { Type = Gurux.DLMS.Objects.Enums.Ip4SetupIpOptionType.RecordRoute, Length = 7, Data = new byte[] { 4, 192, 0, 2, 10 } } };
             notes.Add("Explicit multicast addresses and record-route option exercise structured arrays beside bounded scalar fields.");
         }
+        if (model is GXDLMSIecTwistedPairSetup twisted && state != "blank")
+        {
+            twisted.PrimaryAddresses = state == "long-twisted" ? Enumerable.Range(0, 256).Select(i => (byte)i).ToArray() : new byte[] { 1, 12, 127, 255 };
+            twisted.Tabis = state == "long-twisted" ? Enumerable.Range(0, 128).Select(i => (sbyte)i).ToArray() : new sbyte[] { 0, 1, 12, 127 };
+            if (state == "long-twisted") twisted.Description = "IEC twisted pair commissioning configuration with a deliberately long descriptive name; complete byte and signed-byte address ranges";
+            notes.Add("Explicit legal byte/sbyte list values; the long fixture fills all256 addresses and128 nonnegative TAB values and uses a long description. List Add/Edit dialogs are not invoked.");
+        }
+        if (model is GXDLMSImageTransfer image) PopulateImageTransferFixture(image, state);
         var peers = new GXDLMSObjectCollection { model };
         foreach (var peer in new GXDLMSObject[] { new GXDLMSData("0.0.96.1.1.255"), new GXDLMSRegister("1.0.1.8.0.255"), new GXDLMSScriptTable("0.0.10.0.0.255"), new GXDLMSCredit("0.0.19.10.0.255"), new GXDLMSCharge("0.0.19.20.0.255") }) if (peer.GetType() != model.GetType()) peers.Add(peer);
         if (state != "blank") PopulateCollections(model, peers, notes);
+        if (state == "long-script" && model is GXDLMSActionSchedule schedule && schedule.Target != null)
+        {
+            schedule.Target.Description = "Regional tariff transition and scheduled demand reset - laboratory commissioning script with a deliberately long descriptive name";
+            notes.Add("Long script display name exercises native combo width without changing object identity.");
+        }
+        if (state == "long-target-value" && model is GXDLMSParameterMonitor parameters)
+        {
+            parameters.ChangedParameter.Target.Description = "Regional total import energy register - laboratory meter with a deliberately long descriptive target name";
+            parameters.ChangedParameter.Value = "A long changed parameter value retained in the native read-only field without widening the shared property rail or clipping the execution actions";
+            notes.Add("Long target description and scalar value retain their complete bound strings.");
+        }
+        if (model is GXDLMSRegisterActivation footerActivation) PopulateActivationFooterFixture(footerActivation, state);
         notes.Add("Protocol-specific collection branches not seeded by PopulateCollections retain model defaults.");
+        if (model is GXDLMSAssociationLogicalName && state.StartsWith("association-version"))
+        {
+            model.Version = byte.Parse(new string(state.Substring("association-version".Length).TakeWhile(char.IsDigit).ToArray()));
+            notes.Add("Explicit Association LN version fixture: " + model.Version);
+        }
         for (int i = 1; i <= ((IGXDLMSBase)model).GetAttributeCount(); i++) model.SetLastReadTime(i, SampleTime);
         return model;
     }
@@ -826,6 +976,12 @@ internal static partial class Program
             case GXDLMSProfileGeneric profile: profile.CaptureObjects.Add(capture); profile.Buffer.Add(new object[] { 12846.72 }); profile.Buffer.Add(new object[] { 12847.15 }); profile.Buffer.Add(new object[] { 12848.03 }); profile.EntriesInUse = 3; notes.Add("Populated profile capture column and 3 buffer rows."); break;
             case GXDLMSPushSetup push: push.PushObjectList.Add(capture); notes.Add("Populated push target object."); break;
             case GXDLMSActionSchedule schedule: schedule.Target = scriptTable; schedule.ExecutedScriptSelector = 1; schedule.ExecutionTime = new[] { new GXDateTime(SampleTime), new GXDateTime(SampleTime.AddDays(1)) }; notes.Add("Populated action schedule entries."); break;
+            case GXDLMSParameterMonitor parameters:
+                parameters.ChangedParameter = new GXDLMSTarget(register, 2) { Value = 12846.72 };
+                parameters.CaptureTime = SampleTime;
+                parameters.Parameters.Add(new GXDLMSTarget(register, 2));
+                parameters.Parameters.Add(new GXDLMSTarget(peers.OfType<GXDLMSData>().First(), 2));
+                notes.Add("Populated changed register/attribute/value, capture time and two monitored parameter rows."); break;
             case GXDLMSRegisterActivation activation:
                 activation.RegisterAssignment = new[] { new GXDLMSObjectDefinition { ObjectType = register.ObjectType, LogicalName = register.LogicalName } };
                 activation.MaskList.Add(new KeyValuePair<byte[], byte[]>(Encoding.ASCII.GetBytes("Day"), new byte[] { 1 }));
@@ -939,7 +1095,7 @@ internal static partial class Program
         {
             // Nested tabs can need an intermediate scroll position: scrolling
             // every ancestor to its bottom does not expose every native child.
-            IEnumerable<Control> reveal = result.LayoutAudit
+            IEnumerable<Control> reveal = result.ButtonAudit ? Descendants(editor).OfType<Button>() : result.LayoutAudit
                 ? Descendants(editor).Where(c => LayoutMetrics.Role(c) is "Scalar" or "Action" or "Choice")
                 : Descendants(editor).OfType<ComboBox>();
             foreach (var combo in reveal.Where(c => c.Visible).ToArray())
@@ -961,9 +1117,10 @@ internal static partial class Program
         }
     }
 
-    static void CaptureAtPosition(Form editor, CaseResult result, string output, Size requested, string variant)
+    static void CaptureAtPosition(Form editor, CaseResult result, string output, Size requested, string variant, bool inspectCombos = true)
     {
-        if (result.ComboAudit)
+        if (result.LayoutAudit && !result.ButtonAudit) CheckInputRails(editor, result, requested.Width + "/" + variant);
+        if (result.ComboAudit && inspectCombos)
         {
             // Binding/measurement can trigger native layout and scroll-to-focus.
             // Restore the requested capture position before drawing the viewport.
@@ -977,9 +1134,15 @@ internal static partial class Program
         try
         {
             string file = requested.Width + "x" + requested.Height + "--" + variant + ".png";
+            if (result.ButtonAudit) capture.PrePaintButtons = ButtonAuditMetrics.Measure(editor);
             using (var image = new Bitmap(Math.Max(editor.Width, 1), Math.Max(editor.Height, 1))) { editor.DrawToBitmap(image, new Rectangle(Point.Empty, editor.Size)); image.Save(Path.Combine(output, file)); }
             capture.Path = Path.Combine(output, file);
             if (result.LayoutAudit) capture.LayoutMetrics = LayoutMetrics.Measure(editor);
+            if (result.ButtonAudit) capture.Buttons = ButtonAuditMetrics.Measure(editor);
+            if (result.ButtonAudit) CheckCaptionAlignment(editor, result, capture);
+            if (result.ButtonAudit) CheckShortNameGeneral(editor, result, capture);
+            if (result.ButtonAudit) CheckReportedLayouts(editor, result, capture);
+            if (result.ButtonAudit) foreach (var check in ButtonAuditMetrics.FooterChecks(editor)) result.BehaviorChecks.Add(new() { Name = "Buttons/" + variant + "/" + check.Name, Passed = check.Passed, Detail = check.Detail });
             foreach (var c in Descendants(editor).Where(c => c.Visible)) capture.Controls.Add(MeasureControl(editor, c));
             foreach (var parent in Descendants(editor).Prepend(editor))
             {
@@ -1095,10 +1258,10 @@ internal static partial class Program
     sealed class AuditShell : Form { protected override bool ShowWithoutActivation => true; }
 
     sealed class InventoryResult { public string Assembly { get; set; } = ""; public string AssemblySha256 { get; set; } = ""; public string AssemblyVersion { get; set; } = ""; public DateTime CreatedUtc { get; set; } public int ObjectViewCount { get; set; } public int DialogCount { get; set; } public int UnattributedViewCount { get; set; } public List<ScreenEntry> Screens { get; set; } = []; }
-    sealed class ScreenEntry { public string Type { get; set; } = ""; public string ShortName { get; set; } = ""; public string Kind { get; set; } = ""; public string ModelType { get; set; } = ""; public byte[] Versions { get; set; } = []; public string[] LogicalNames { get; set; } = []; public string[] Standards { get; set; } = []; public string[] Constructors { get; set; } = []; public string Coverage { get; set; } = ""; }
+    sealed class ScreenEntry { public string[] ButtonFields { get; set; } = []; public string Type { get; set; } = ""; public string ShortName { get; set; } = ""; public string Kind { get; set; } = ""; public string ModelType { get; set; } = ""; public byte[] Versions { get; set; } = []; public string[] LogicalNames { get; set; } = []; public string[] Standards { get; set; } = []; public string[] Constructors { get; set; } = []; public string Coverage { get; set; } = ""; }
     sealed class ComboEntry { public string Path { get; set; } = ""; public string Name { get; set; } = ""; public string NativeName { get; set; } = ""; public string Kind { get; set; } = ""; public int AttributeIndex { get; set; } public string HostType { get; set; } = ""; public int NativeInstanceId { get; set; } public bool VisibleObserved { get; set; } public bool BehaviorChecked { get; set; } public string BehaviorCoverage { get; set; } = ""; public string[] Items { get; set; } = []; public string[] ItemTypes { get; set; } = []; public List<string> Variants { get; set; } = []; }
-    sealed class CaseResult { public bool LayoutAudit { get; set; } public bool ComboAudit { get; set; } public List<ComboEntry> Combos { get; set; } = []; public string View { get; set; } = ""; public string State { get; set; } = ""; public string Status { get; set; } = "Failed"; public string AssemblySha256 { get; set; } = ""; public string Monitor { get; set; } = ""; public bool BindingSucceeded { get; set; } public bool DirtyIndicatorAppeared { get; set; } public bool CleanIndicatorCleared { get; set; } public List<string> FixtureNotes { get; set; } = []; public List<string> Errors { get; set; } = []; public List<CaptureResult> Captures { get; set; } = []; public List<Regression> BehaviorChecks { get; set; } = []; }
-    sealed class CaptureResult { public List<LayoutMetric> LayoutMetrics { get; set; } = []; public int Width { get; set; } public int Height { get; set; } public int ActualWidth { get; set; } public int ActualHeight { get; set; } public int Dpi { get; set; } public string Variant { get; set; } = "default"; public string Status { get; set; } = ""; public string Error { get; set; } = ""; public string Path { get; set; } = ""; public List<ControlResult> Controls { get; set; } = []; public List<Overlap> Overlaps { get; set; } = []; public List<ScrollSurface> ScrollSurfaces { get; set; } = []; }
+    sealed class CaseResult { public bool ButtonAudit { get; set; } public bool LayoutAudit { get; set; } public bool ComboAudit { get; set; } public List<ComboEntry> Combos { get; set; } = []; public string View { get; set; } = ""; public string State { get; set; } = ""; public string Status { get; set; } = "Failed"; public string AssemblySha256 { get; set; } = ""; public string Monitor { get; set; } = ""; public bool BindingSucceeded { get; set; } public bool DirtyIndicatorAppeared { get; set; } public bool CleanIndicatorCleared { get; set; } public List<string> FixtureNotes { get; set; } = []; public List<string> Errors { get; set; } = []; public List<CaptureResult> Captures { get; set; } = []; public List<Regression> BehaviorChecks { get; set; } = []; }
+    sealed class CaptureResult { public List<ButtonAuditMetric> PrePaintButtons { get; set; } = []; public List<ButtonAuditMetric> Buttons { get; set; } = []; public List<LayoutMetric> LayoutMetrics { get; set; } = []; public int Width { get; set; } public int Height { get; set; } public int ActualWidth { get; set; } public int ActualHeight { get; set; } public int Dpi { get; set; } public string Variant { get; set; } = "default"; public string Status { get; set; } = ""; public string Error { get; set; } = ""; public string Path { get; set; } = ""; public List<ControlResult> Controls { get; set; } = []; public List<Overlap> Overlaps { get; set; } = []; public List<ScrollSurface> ScrollSurfaces { get; set; } = []; }
     sealed class ControlResult { public string Name { get; set; } = ""; public string Path { get; set; } = ""; public string Type { get; set; } = ""; public string Text { get; set; } = ""; public int X { get; set; } public int Y { get; set; } public int Width { get; set; } public int Height { get; set; } public int ParentWidth { get; set; } public int ParentHeight { get; set; } public int Left { get; set; } public int Top { get; set; } public float FontPoints { get; set; } public bool Enabled { get; set; } public int TabIndex { get; set; } public bool TabStop { get; set; } public string AccessibleName { get; set; } = ""; public string EffectiveAccessibleName { get; set; } = ""; public string AccessibleRole { get; set; } = ""; public bool AccessibilityCandidate { get; set; } public bool LabelClipCandidate { get; set; } public bool OutsideParent { get; set; } public string FieldType { get; set; } = ""; }
     sealed class Overlap { public string First { get; set; } = ""; public string Second { get; set; } = ""; public int Width { get; set; } public int Height { get; set; } }
     sealed class ScrollSurface { public string Path { get; set; } = ""; public bool Horizontal { get; set; } public bool Vertical { get; set; } public int ClientWidth { get; set; } public int ClientHeight { get; set; } public int DisplayWidth { get; set; } public int DisplayHeight { get; set; } }

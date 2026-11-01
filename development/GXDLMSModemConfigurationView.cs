@@ -76,13 +76,18 @@ namespace Gurux.DLMS.UI
                 ModernPresentation.CompactRow(table, LogicalNameLbl.Text, LogicalNameTB);
                 ModernPresentation.CompactRow(table, CommunicationSpeedLbl.Text, CommunicationSpeedTB);
                 ModernPresentation.CompactRow(table, InitialisationLbl.Text, InitialisationView, height: 180);
-                var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true };
+                var actions = new ActionButtonPanel { Dock = DockStyle.Fill, WrapContents = true };
                 foreach (var button in new[] { AddBtn, EditBtn, RemoveBtn })
                 {
                     ModernPresentation.CompactButton(button);
                     actions.Controls.Add(button);
                 }
-                ModernPresentation.CompactRow(table, string.Empty, actions, height: 80);
+                ButtonLayoutPolicy.Apply(actions, new[] { AddBtn, EditBtn, RemoveBtn });
+                int actionsRow = table.RowCount++;
+                table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                table.Controls.Add(actions, 1, actionsRow);
+                table.SetColumnSpan(actions, table.ColumnCount - 1);
+                InitialisationView.Margin = new Padding(0, InitialisationView.Margin.Top, 0, 0);
                 ModernPresentation.CompactRow(table, ModemProfileLbl.Text, ModemProfileTB, height: 120);
                 // CompactRow frames ordinary text boxes; multiline content fills its row.
                 ModemProfileTB.Dock = DockStyle.Fill;

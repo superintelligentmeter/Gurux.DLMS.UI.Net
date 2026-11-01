@@ -56,7 +56,7 @@ internal static class LayoutMetrics
             var metric = new LayoutMetric
             {
                 Name = c.Name, Path = Path(c), ParentPath = c.Parent == null ? "" : Path(c.Parent), Type = c.GetType().Name,
-                Role = Role(c), DataType = dataType, Text = c.Text, X = origin.X, Y = origin.Y, Width = c.Width, Height = c.Height,
+                Role = Role(c), DataType = dataType, Text = c.Text, X = origin.X, Y = origin.Y, Width = c.Width, Height = c.Height, ClientWidth = c.ClientSize.Width, ClientHeight = c.ClientSize.Height,
                 Left = c.Left, Top = c.Top, ParentWidth = c.Parent?.ClientSize.Width ?? 0, ParentHeight = c.Parent?.ClientSize.Height ?? 0,
                 Dpi = c.DeviceDpi, MaximumWidth = c.MaximumSize.Width, MinimumWidth = c.MinimumSize.Width,
                 FontFamily = c.Font.FontFamily.Name, FontPoints = c.Font.SizeInPoints, FontStyle = c.Font.Style.ToString(),
@@ -87,6 +87,7 @@ internal sealed class LayoutMetric
     public string Name { get; set; } = ""; public string Path { get; set; } = ""; public string ParentPath { get; set; } = "";
     public string Type { get; set; } = ""; public string Role { get; set; } = ""; public string DataType { get; set; } = ""; public string Text { get; set; } = "";
     public int X { get; set; } public int Y { get; set; } public int Width { get; set; } public int Height { get; set; } public int Left { get; set; } public int Top { get; set; }
+    public int ClientWidth { get; set; } public int ClientHeight { get; set; }
     public int ParentWidth { get; set; } public int ParentHeight { get; set; } public int Dpi { get; set; } public int MaximumWidth { get; set; } public int MinimumWidth { get; set; }
     public string FontFamily { get; set; } = ""; public float FontPoints { get; set; } public string FontStyle { get; set; } = ""; public int ForeColor { get; set; } public int BackColor { get; set; } public int FontHeight { get; set; }
     public int VisibleWidth { get; set; } public int VisibleHeight { get; set; } public bool HasScrollableAncestor { get; set; } public bool CaptionClip { get; set; } public bool Enabled { get; set; }

@@ -1,0 +1,307 @@
+{
+  "date": "2026-10-31",
+  "scope": "Right edges on seven reported method screens; pending Image Transfer, IPv6, Security and container-height fixes retained.",
+  "artifactRootName": "method-right-edges-20261031",
+  "candidate": {
+    "ui": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+    "director": "B508EAA15E09B18FB25816498B4A39A401B58EC6C1D0490E345D17933966C931",
+    "protocol": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  },
+  "usualExecutableUpdated": true,
+  "fixes": [
+    "For generated scalar method rows without a data peer, derive the trailing margin from the last actual field edge. Recalculate on table layout/current DPI and field size changes; retain native reading order, wrapping, fonts, colors and actions.",
+    "PRIME network administration Reset tracks its active list edge, with one bounded deferred layout pass after changing the inset. Compact Data retains its separate already verified data/action fitter."
+  ],
+  "baseline": {
+    "uiSha256": "55CBA9DCDFA0D937CDBA94030E0F4AC41FAC7E1D36C65DC68976A7268F3B4986",
+    "failedAssertions": 4,
+    "difference": "G3 Reset extends 8 physical pixels beyond its final field at 96 DPI",
+    "evidence": "baseline96/result.json"
+  },
+  "verification": {
+    "cases": 21,
+    "captures": 284.0,
+    "assertions": 612.0,
+    "failures": 0,
+    "methodVisibilityChecks": 22,
+    "methodVisibilityEvidence": "method-visibility.json",
+    "physicalDpi": [
+      96,
+      120
+    ],
+    "roundtrips": [
+      "PRIME network administration",
+      "Credit"
+    ],
+    "builds": "Enabled and disabled final builds: zero errors, 44 existing warnings each."
+  },
+  "notes": [
+    "Seven reported views were rendered at normal/intermediate/narrow/restored sizes on both physical scales; all PRIME and Account tabs exercised. Root reviewed the seven-screen sheet and wide/narrow results. Native bitmap/test-host limitations still apply.",
+    "Each original reported method button was observed fully visible in at least one capture per case; Reset/credit/account actions were not invoked. Related guards cover Disconnect, Image Transfer, IPv6, Security Setup and Compact Data.",
+    "G3 two-case evidence retains the first generic-edge assembly hash; only the private PRIME deferred settlement changed afterward. Other accepted cases record the final candidate hash. Do not relabel historical evidence.",
+    "The initial PRIME test copy had a stale544px footer in a1048px table after resize. Its24 failed edge checks remain in verified/PRIME result; the confirmed cases supersede that attempt.",
+    "Existing fonts/colors, bindings and dlms.net retained; offline fixtures only, no user preferences/files or meter commands changed.",
+    "Installed together through the method-action-edge followup. Exact older per-case hashes retained; latest related guards pass. No commit or push."
+  ],
+  "cases": [
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSAccountView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 32,
+      "assertions": 18,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSAccountView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSAccountView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 32,
+      "assertions": 18,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSAccountView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSCompactDataView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 13,
+      "assertions": 7,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSCompactDataView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSCreditView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 8,
+      "assertions": 10,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSCreditView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSCreditView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 5,
+      "assertions": 7,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSCreditView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSCreditView",
+      "state": "roundtrip",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96,
+        120
+      ],
+      "captures": 27,
+      "assertions": 42,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSCreditView-roundtrip-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSDisconnectControlView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 4,
+      "assertions": 22,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSDisconnectControlView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSImageTransferView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 6,
+      "assertions": 92,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSImageTransferView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSIp6SetupView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 24,
+      "assertions": 122,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSIp6SetupView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSLlcSscsSetupView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSLlcSscsSetupView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSLlcSscsSetupView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSLlcSscsSetupView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcMacCountersView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcMacCountersView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcMacCountersView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcMacCountersView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 24,
+      "assertions": 26,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView",
+      "state": "roundtrip",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96,
+        120
+      ],
+      "captures": 35,
+      "assertions": 50,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView-roundtrip-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcPhysicalLayerCountersView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcPhysicalLayerCountersView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcPhysicalLayerCountersView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSPrimeNbOfdmPlcPhysicalLayerCountersView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSSecuritySetupView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 16,
+      "assertions": 122,
+      "failures": 0,
+      "evidence": "confirmed/GXDLMSSecuritySetupView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSG3PlcMacLayerCountersView",
+      "state": "representative",
+      "uiSha256": "78415D0F70DE3FF5117523887ED29ABB8378041B5A8758F7480B86CE1BCC3E67",
+      "physicalDpi": [
+        120
+      ],
+      "captures": 6,
+      "assertions": 8,
+      "failures": 0,
+      "evidence": "verified/GXDLMSG3PlcMacLayerCountersView-representative-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSG3PlcMacLayerCountersView",
+      "state": "representative",
+      "uiSha256": "78415D0F70DE3FF5117523887ED29ABB8378041B5A8758F7480B86CE1BCC3E67",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 4,
+      "assertions": 6,
+      "failures": 0,
+      "evidence": "verified/GXDLMSG3PlcMacLayerCountersView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView",
+      "state": "representative",
+      "uiSha256": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 24,
+      "assertions": 26,
+      "failures": 0,
+      "evidence": "prime-confirmation96/result.json"
+    }
+  ],
+  "installed": {
+    "ui": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+    "director": "B508EAA15E09B18FB25816498B4A39A401B58EC6C1D0490E345D17933966C931",
+    "protocol": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  }
+}

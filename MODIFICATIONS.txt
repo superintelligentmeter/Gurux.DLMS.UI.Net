@@ -156,3 +156,15 @@ Updated README maintainer/repository links to superintelligentmeter and current 
 
 2026-10-29 — Dashboard source availability
 Updated the companion application README to link the published Director dashboard guide and remove the unpublished-source note. No UI library or protocol package code changed.
+
+2026-10-31 — Grouped device ciphering editors
+Grouped the embedded device ciphering editors (Security, System titles, Keys) on a shared caption rail, with one trailing key action row (Find or Generate keys, then Certificate), presentation-only key placeholders and inline length/format feedback, and message boxes owned by the hosting dialog. The page is built in one suspended layout batch. Original controls, handlers, property getters/setters, key generator and validation behavior are unchanged. Added or modified: development/Ecdsa/GXDeviceCipheringSettings.Layout.cs, development/Ecdsa/GXDeviceCipheringSettings.cs, development/Ecdsa/CipheringLayout.cs, development/Ecdsa/GXCipheringSettings.cs, development/Gurux.DLMS.UI.Net.csproj.
+
+2026-10-31 — Per-monitor typography and Keys hint placement
+ApplicationTypography scales its 9 pt body size by each control's monitor DPI relative to the system DPI, and styles a control that has no handle on an already-showing window once WinForms creates it there. Menus, tool bars and status bars take the body size of the monitor they are on. Previously, dialogs styled after opening on a lower-DPI monitor (for example the Tools dialogs on a 100% monitor next to a 125% primary display) showed 125% text. The device ciphering Keys hint now starts the Keys action row in its own readable color, so changing Security never moves the Keys group. Added or modified: development/ApplicationTypography.cs, development/Ecdsa/GXDeviceCipheringSettings.Layout.cs.
+
+2026-11-01 — Closing a Tools dialog on a second monitor
+ApplicationTypography now hides a closing modeless window, pauses its layout work and no longer lets WinForms rescale it. Closing an owned dialog that sits on a monitor with a different DPI than the one it was created for made Windows send a DPI change twice while the dialog was being disposed; WinForms then rescaled all its controls (about 1.3 seconds for the DLMS Translator, 4 seconds for Device Properties) with the half-laid-out window still on screen. A dialog that is shown again resumes normal handling. Original controls, handlers and values are unchanged. Added or modified: development/ApplicationTypography.cs.
+
+2026-11-01 - ModernPresentation.RoundTabs: shared public helper for rounded tab headers (previously private to the
+  object editors). Headers are repainted over the native 3-D edges and the dotted focus cue is hidden until the keyboard is used.

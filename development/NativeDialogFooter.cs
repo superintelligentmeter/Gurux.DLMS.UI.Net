@@ -7,11 +7,11 @@ using System.Windows.Forms;
 namespace Gurux.DLMS.UI
 {
     // Preserve each editor and handler while reserving a separate, measured action row.
-    internal static class NativeDialogFooter
+    public static class NativeDialogFooter
     {
         private static int S(Control control, int value) => (int)Math.Round(value * control.DeviceDpi / 96d);
 
-        internal static void Apply(Form form, Button accept, Button cancel)
+        public static void Apply(Form form, Button accept, Button cancel)
         {
             form.SuspendLayout();
             try
@@ -35,9 +35,40 @@ namespace Gurux.DLMS.UI
             finally { form.ResumeLayout(true); }
         }
 
+        /// <summary>Retains an existing dedicated footer panel and its form's keyboard buttons.</summary>
+        public static void ApplyToPanel(Form form, Panel panel, Button accept, Button cancel)
+        {
+            var footer = Actions(form, accept, cancel);
+            footer.Dock = DockStyle.Fill;
+            panel.Padding = Padding.Empty;
+            panel.Controls.Add(footer);
+            bool fitting = false;
+            void Fit()
+            {
+                if (fitting || panel.IsDisposed || panel.ClientSize.Width < 1 ||
+                    form.WindowState == FormWindowState.Minimized) return;
+                fitting = true;
+                try
+                {
+                    int height = footer.GetPreferredSize(new Size(panel.ClientSize.Width, 0)).Height;
+                    if (panel.Height != height) panel.Height = height;
+                }
+                finally { fitting = false; }
+            }
+            panel.Layout += (_, _) => Fit();
+            panel.SizeChanged += (_, _) => Fit();
+            panel.DpiChangedAfterParent += (_, _) => Fit();
+            footer.SizeChanged += (_, _) => Fit();
+            accept.FontChanged += (_, _) => Fit();
+            cancel.FontChanged += (_, _) => Fit();
+            Fit();
+            form.AcceptButton = accept;
+            form.CancelButton = cancel;
+        }
+
         internal static FlowLayoutPanel Actions(Form form, Button accept, Button cancel)
         {
-            var footer = new FlowLayoutPanel
+            var footer = new ActionButtonPanel
             {
                 Name = "NativeDialogActions", Dock = DockStyle.Bottom, AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.RightToLeft,
@@ -51,6 +82,8 @@ namespace Gurux.DLMS.UI
                 button.Margin = new Padding(S(form, 8), 0, 0, 0);
                 footer.Controls.Add(button);
             }
+            ButtonLayoutPolicy.Apply(footer, new[] { accept, cancel }, minimumWidth: 80, height: 28,
+                horizontalInset: 12, topInset: 8, bottomInset: 10);
             return footer;
         }
 
@@ -92,6 +125,9 @@ namespace Gurux.DLMS.UI
                 objects.Dock = DockStyle.Fill; objects.Margin = new Padding(S(form, 12), 0, S(form, 12), 0);
                 var actions = Actions(form, accept, cancel);
                 actions.Dock = DockStyle.Fill;
+                // This confirmation group owns an AutoSize column, so reserve
+                // its full one-row width instead of wrapping Cancel below OK.
+                actions.WrapContents = false;
                 var bottom = new TableLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, ColumnCount = 2 };
                 bottom.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); bottom.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
                 remove.AutoSize = true; remove.AutoSizeMode = AutoSizeMode.GrowAndShrink; remove.Anchor = AnchorStyles.Left;
@@ -135,13 +171,15 @@ namespace Gurux.DLMS.UI
                     }
                 };
                 list.Dock = DockStyle.Fill; list.Margin = new Padding(S(form, 12), 0, S(form, 12), 0);
-                var tools = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(S(form, 12), S(form, 8), S(form, 12), 0) };
+                var tools = new ActionButtonPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(S(form, 12), S(form, 8), S(form, 12), 0) };
                 foreach (Button button in new[] { remove, edit, add })
                 {
                     button.AutoSize = true; button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
                     button.MinimumSize = new Size(S(form, 80), S(form, 28)); button.Anchor = AnchorStyles.None; button.Dock = DockStyle.None;
                     button.Margin = new Padding(S(form, 8), 0, 0, 0); tools.Controls.Add(button);
                 }
+                ButtonLayoutPolicy.Apply(tools, new[] { add, edit, remove }, minimumWidth: 80, height: 28,
+                    horizontalInset: 12, topInset: 8, bottomInset: 4);
                 var actions = Actions(form, accept, cancel); actions.Dock = DockStyle.Fill;
                 var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6 };
                 root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));

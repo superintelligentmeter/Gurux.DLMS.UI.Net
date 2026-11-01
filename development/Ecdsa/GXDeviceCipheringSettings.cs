@@ -1,3 +1,5 @@
+// superintelligentmeter, 2026-10-31: original message boxes are owned by the hosting dialog. GPL-2.0-only; original notices retained.
+// superintelligentmeter, 2026-10-30: share the adaptive caption rail across ciphering sections. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: resize ciphering controls as native rows and switch whole signing panels. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using Gurux.DLMS.ASN;
@@ -510,7 +512,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             // Preserve the font metrics used by the fixed-coordinate designer.
             Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
             InitializeComponent();
-            InitializeCipheringLayout();
+            InitializeGroupedCipheringLayout();
             _address = address;
             _title = title;
             _keysPath = keysPath;
@@ -530,42 +532,6 @@ namespace Gurux.DLMS.UI.Ecdsa
             updateUI = true;
         }
 
-        private void InitializeCipheringLayout()
-        {
-            CipheringTab.SuspendLayout();
-            var common = CipheringLayout.Surface(CipheringTab);
-            CipheringLayout.Row(common, label1, SecuritySuiteCb);
-            CipheringLayout.Row(common, SecurityLbl, SecurityCB);
-            CipheringLayout.Row(common, SigningLbl, SigningCb);
-            CipheringLayout.Row(common, label7, SystemTitleTb, SystemTitleAsciiCb);
-            CipheringLayout.Row(common, UsePreEstablishedApplicationAssociations, ServerSystemTitleTb);
-            CipheringLayout.Row(common, BlockCipherKeyLbl, BlockCipherKeyTB, BlockCipherKeyAsciiCb);
-            CipheringLayout.Row(common, AuthenticationKey0Lbl, AuthenticationKeyTB, AuthenticationKeyAsciiCb);
-            CipheringLayout.Row(common, BroadcastKeyLbl, BroadcastKeyTb, BroadcastKeyAsciiCb);
-            CipheringLayout.Span(common, IgnoreSNRM);
-            CipheringLayout.Span(common, CipheringLayout.Actions(ClientCertificateBtn));
-
-            var suite0 = CipheringLayout.Surface(Cipheringv0);
-            CipheringLayout.Row(suite0, DedicatedKeyLbl, DedicatedKeyTb, DedicatedKeyAsciiCb);
-            CipheringLayout.Row(suite0, ChallengeLbl, ChallengeTB);
-            CipheringLayout.Span(suite0, CipheringLayout.Actions(GenerateDedicatedKeyBtn));
-
-            var client = CipheringLayout.Surface(groupBox1);
-            CipheringLayout.Row(client, label3, ClientSigningKeysCb, ClientSigningKeysInfoBtn);
-            CipheringLayout.Row(client, label4, ClientAgreementKeysCb, ClientAgreementKeyInfoBtn);
-            var server = CipheringLayout.Surface(groupBox2);
-            CipheringLayout.Row(server, label6, ServerSigningKeysCb, ServerSigningKeyInfoBtn);
-            CipheringLayout.Row(server, label5, ServerAgreementKeysCb, ServerAgreementKeyInfoBtn);
-            var suite1 = CipheringLayout.Surface(Cipheringv1);
-            CipheringLayout.Span(suite1, groupBox1);
-            CipheringLayout.Span(suite1, groupBox2);
-            CipheringLayout.Span(suite1, SignInitiateRequestResponseCb);
-            CipheringLayout.Span(suite1, CipheringLayout.Actions(UpdateBtn));
-
-            CipheringLayout.HostSuites(tabControl1, CipheringTab, CipheringPanel, Cipheringv0, Cipheringv1, CipheringV0Tab, CipheringV1Tab);
-            CipheringLayout.Span(common, CipheringPanel);
-            CipheringTab.ResumeLayout(true);
-        }
         public TabPage GetCiphetingTab()
         {
             return CipheringTab;
@@ -634,7 +600,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 SystemTitleAscii = !SystemTitleAsciiCb.Checked;
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -647,7 +613,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 BlockCipherKeyAscii = !BlockCipherKeyAsciiCb.Checked;
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -660,7 +626,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 AuthenticationKeyAscii = !AuthenticationKeyAsciiCb.Checked;
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -673,7 +639,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 DedicatedKeyAscii = !DedicatedKeyAsciiCb.Checked;
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -773,7 +739,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
             finally
             {
@@ -887,7 +853,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 BlockCipherKeyTB.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -922,7 +888,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 DedicatedKeyTb.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -960,7 +926,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 SystemTitleTb.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1035,7 +1001,7 @@ namespace Gurux.DLMS.UI.Ecdsa
                         string certificateSt = GXDLMSTranslator.ToHex(GXAsn1Converter.SystemTitleFromSubject(cv.Value.Subject), false);
                         if (st != certificateSt)
                         {
-                            if (MessageBox.Show(Parent, string.Format("System title '{0}' of the client is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", SystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                            if (MessageBox.Show(DialogOwner, string.Format("System title '{0}' of the client is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", SystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 SystemTitleAsciiCb.Checked = false;
                                 SystemTitleTb.Text = certificateSt;
@@ -1048,7 +1014,7 @@ namespace Gurux.DLMS.UI.Ecdsa
                         string certificateSt = GXDLMSTranslator.ToHex(GXAsn1Converter.SystemTitleFromSubject(ck.Value.Subject), false);
                         if (st != certificateSt)
                         {
-                            if (MessageBox.Show(Parent, string.Format("System title '{0}' of the client is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", SystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                            if (MessageBox.Show(DialogOwner, string.Format("System title '{0}' of the client is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", SystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 SystemTitleAsciiCb.Checked = false;
                                 SystemTitleTb.Text = certificateSt;
@@ -1062,7 +1028,7 @@ namespace Gurux.DLMS.UI.Ecdsa
                         string certificateSt = GXDLMSTranslator.ToHex(GXAsn1Converter.SystemTitleFromSubject(sv.Value.Subject), false);
                         if (ServerSystemTitleTb.Text.Replace(" ", "") != certificateSt)
                         {
-                            if (MessageBox.Show(Parent, string.Format("System title '{0}' of the server is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", ServerSystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                            if (MessageBox.Show(DialogOwner, string.Format("System title '{0}' of the server is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", ServerSystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 ServerSystemTitleTb.Text = certificateSt;
                                 check = false;
@@ -1074,7 +1040,7 @@ namespace Gurux.DLMS.UI.Ecdsa
                         string certificateSt = GXDLMSTranslator.ToHex(GXAsn1Converter.SystemTitleFromSubject(sk.Value.Subject), false);
                         if (ServerSystemTitleTb.Text.Replace(" ", "") != certificateSt)
                         {
-                            if (MessageBox.Show(Parent, string.Format("System title '{0}' of the server is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", ServerSystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
+                            if (MessageBox.Show(DialogOwner, string.Format("System title '{0}' of the server is different than in the certificate '{1}'. Do you want to update the system title from the certificate?", ServerSystemTitleTb.Text, certificateSt), "", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 ServerSystemTitleTb.Text = certificateSt;
                                 check = false;
@@ -1133,7 +1099,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1194,7 +1160,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1209,7 +1175,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1224,7 +1190,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1239,7 +1205,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1264,7 +1230,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1292,7 +1258,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 ServerSystemTitleTb.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1318,7 +1284,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1330,7 +1296,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1342,7 +1308,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1377,7 +1343,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 AuthenticationKeyTB.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1409,7 +1375,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 BroadcastKeyAscii = !BroadcastKeyAsciiCb.Checked;
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
 
@@ -1444,7 +1410,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             catch (Exception ex)
             {
                 BroadcastKeyTb.Select();
-                MessageBox.Show(Parent, ex.Message);
+                MessageBox.Show(DialogOwner, ex.Message);
             }
         }
     }

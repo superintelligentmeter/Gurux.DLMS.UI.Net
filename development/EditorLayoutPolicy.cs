@@ -61,6 +61,18 @@ namespace Gurux.DLMS.UI
             state.Fit();
         }
 
+        /// <summary>Related nested sections keep their owner and share its adaptive caption column.</summary>
+        public static void ShareLabelColumn(TableLayoutPanel table, TableLayoutPanel owner)
+        {
+            if (ReferenceEquals(table, owner)) return;
+            if (!Tables.TryGetValue(table, out var state))
+            {
+                ConfigurePropertyTable(table);
+                state = Tables.GetValue(table, _ => throw new InvalidOperationException());
+            }
+            state.ShareLabelColumn(owner);
+        }
+
         private static bool Flexible(Control control)
         {
             // GXValueField contains dormant list/grid editors. Inspect its active presentation only.
@@ -80,7 +92,30 @@ namespace Gurux.DLMS.UI
             private readonly Dictionary<RowStyle, MeasuredRow> measuredRows = new();
             private readonly Dictionary<RowStyle, float> nativeRowMinimums = new();
             private sealed class MeasuredRow { internal float LogicalBase; internal float Applied; internal int Dpi; }
+            private TableLayoutPanel labelColumnOwner;
             internal bool BoundSection;
+
+            internal void ShareLabelColumn(TableLayoutPanel owner)
+            {
+                if (ReferenceEquals(labelColumnOwner, owner)) return;
+                if (labelColumnOwner != null)
+                {
+                    labelColumnOwner.Layout -= OwnerLayout;
+                    labelColumnOwner.SizeChanged -= OwnerChanged;
+                    labelColumnOwner.DpiChangedAfterParent -= OwnerChanged;
+                }
+                labelColumnOwner = owner;
+                if (owner != null)
+                {
+                    owner.Layout += OwnerLayout;
+                    owner.SizeChanged += OwnerChanged;
+                    owner.DpiChangedAfterParent += OwnerChanged;
+                }
+                Fit();
+            }
+
+            private void OwnerLayout(object sender, LayoutEventArgs e) => Fit();
+            private void OwnerChanged(object sender, EventArgs e) => Fit();
             internal PropertyTable(TableLayoutPanel table, bool boundSection)
             {
                 this.table = table; BoundSection = boundSection;
@@ -88,6 +123,7 @@ namespace Gurux.DLMS.UI
                 table.DpiChangedAfterParent += (_, _) => Fit();
                 table.FontChanged += (_, _) => Fit();
                 table.ParentChanged += (_, _) => Fit();
+                table.Disposed += (_, _) => ShareLabelColumn(null);
             }
 
             private void Observe(Control control)
@@ -120,7 +156,8 @@ namespace Gurux.DLMS.UI
                     bool flexible = controls.Any(Flexible);
                     int cap = BoundSection && !flexible ? S(table, SectionWidth) : 0;
                     SetWidthLimit(table, cap);
-                    int rail = Math.Min(S(table, LabelColumnWidth), Math.Max(S(table, MinimumLabelColumnWidth), table.ClientSize.Width / 3));
+                    var railOwner = labelColumnOwner is { IsDisposed: false } ? labelColumnOwner : table;
+                    int rail = Math.Min(S(railOwner, LabelColumnWidth), Math.Max(S(railOwner, MinimumLabelColumnWidth), railOwner.ClientSize.Width / 3));
                     table.ColumnStyles[0].SizeType = SizeType.Absolute;
                     if (Math.Abs(table.ColumnStyles[0].Width - rail) > 1) table.ColumnStyles[0].Width = rail;
                     foreach (var caption in captions)

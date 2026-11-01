@@ -1,4 +1,5 @@
-﻿// superintelligentmeter contributors, 2026-10-30: aligned Activity Calendar rows and responsive profile tables. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-11-01: shared RoundTabs for tab controls outside the object editors. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-30: aligned Activity Calendar rows and responsive profile tables. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: consistent native combo presentation across object editors. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: native Clock base combo without a visible wrapper. GPL-2.0-only; original notices retained.
 // superintelligentmeter contributors, 2026-10-30: measured full-width sort reference row. GPL-2.0-only; original notices retained.
@@ -47,6 +48,10 @@ namespace Gurux.DLMS.UI
             private void PaintRemainder(Graphics graphics)
             {
                 if (tabs.IsDisposed || tabs.TabPages.Count == 0) return;
+                // The native header paints its 3-D edges after owner drawing; repaint the rounded tabs over them.
+                for (int i = 0; i < tabs.TabPages.Count; i++)
+                    DrawRoundedTab(tabs, new DrawItemEventArgs(graphics, tabs.Font, tabs.GetTabRect(i), i,
+                        i == tabs.SelectedIndex ? DrawItemState.Selected : DrawItemState.None));
                 Rectangle last = tabs.GetTabRect(tabs.TabPages.Count - 1);
                 if (last.Right < tabs.ClientSize.Width)
                     graphics.FillRectangle(Brushes.White, last.Right, 0,
@@ -102,6 +107,10 @@ namespace Gurux.DLMS.UI
                 ReflowProfileGeneric(form);
             else if (form is GXDLMSClockView)
                 CompactClock(form);
+            else if (form is GXDLMSActionScheduleView)
+                ReflowActionSchedule(form);
+            else if (form is GXDLMSParameterMonitorView)
+                ReflowParameterMonitor(form);
             StyleTree(form);
             ApplicationTypography.Apply(form);
             ConfigureEditorTabs(form);
@@ -111,7 +120,6 @@ namespace Gurux.DLMS.UI
             else if (form is GXDLMSImageTransferView) ReflowImageTransfer(form);
             else if (form is GXDLMSGprsSetupView) ReflowGprsSetup(form);
             else if (form is GXDLMSGSMDiagnosticView) ReflowGsmDiagnostic(form);
-            else if (form is GXDLMSActionScheduleView) ReflowActionSchedule(form);
             else if (form is GXDLMSActivityCalendarView) ReflowActivityCalendar(form);
             form.SystemColorsChanged += (_, _) => StyleTree(form);
             if (form is GXDLMSActivityCalendarView) StyleActivityCalendarSurfaces(form);
@@ -187,27 +195,6 @@ namespace Gurux.DLMS.UI
                 descriptionList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             }
 
-            group.Resize += (_, _) => LayoutRows();
-            group.FontChanged += (_, _) => LayoutRows();
-            form.DpiChanged += (_, _) => LayoutRows();
-            LayoutRows();
-        }
-
-        private static void ReflowActionSchedule(Form form)
-        {
-            var group = Find(form, "groupBox2");
-            var labels = new[] { (Label)Find(group, "ScriptNameLbl"), (Label)Find(group, "ScriptSelectorLbl"), (Label)Find(group, "ScriptTypeLbl") };
-            var fields = new[] { Find(group, "ScriptNameTB"), Find(group, "ScriptSelectorTB"), Find(group, "ScriptTypeTb") };
-            void LayoutRows()
-            {
-                int left = labels.Max(label => label.Left + LabelTextWidth(label)) + Scale(group, 12);
-                foreach (Control field in fields)
-                {
-                    field.Left = left;
-                    field.Width = Math.Max(Scale(group, 100), group.ClientSize.Width - left - Scale(group, 8));
-                    field.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                }
-            }
             group.Resize += (_, _) => LayoutRows();
             group.FontChanged += (_, _) => LayoutRows();
             form.DpiChanged += (_, _) => LayoutRows();
@@ -371,14 +358,7 @@ namespace Gurux.DLMS.UI
             foreach (Panel panel in Descendants(group).OfType<Panel>().Where(panel => panel.Dock == DockStyle.Bottom))
             {
                 panel.BackColor = white;
-                panel.Height = Scale(panel, 50);
-                foreach (Button button in panel.Controls.OfType<Button>())
-                {
-                    button.AutoSize = false;
-                    button.Height = Scale(panel, 30);
-                    button.Top = (panel.ClientSize.Height - button.Height) / 2;
-                    button.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-                }
+
             }
             ConfigureProfileList("SeasonProfileActiveLV", "panel1", "SeasonProfileActiveAddBtn", "SeasonProfileActiveEditBtn", "SeasonProfileActiveRemoveBtn");
             ConfigureProfileList("AWeekProfileLV", "panel2", "WeekProfileActiveAddBtn", "WeekProfileActiveEditBtn", "WeekProfileActiveRemoveBtn");
@@ -402,38 +382,72 @@ namespace Gurux.DLMS.UI
                     list.Columns[index].Width = widths[index] + (index < flexible ? extra / flexible : 0);
             }
 
+            FlowLayoutPanel CalendarActions(Panel panel, string[] names)
+            {
+                var footer = new ActionButtonPanel { Name = panel.Name + "Actions", Dock = DockStyle.Fill,
+                    Margin = Padding.Empty, BackColor = white };
+                panel.Controls.Add(footer);
+                ButtonLayoutPolicy.Apply(footer, names.Select(name => (Button)controls[name]).ToArray(),
+                    minimumWidth: 92, horizontalInset: 0);
+                // The outer panel and its fitter own the complete wrapped bounds.
+                // Avoid a competing dock/AutoSize pass reusing one-row height.
+                footer.AutoSize = false;
+                footer.Dock = DockStyle.None;
+                footer.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                return footer;
+            }
+
+            int CalendarFooterHeight(Panel panel, FlowLayoutPanel footer, Control page)
+            {
+                // Docked panels respect the native tab-page padding; the lists
+                // use their own explicit inset. Match those actual content rails.
+                int edge = Scale(page, 4);
+                panel.Padding = new Padding(Math.Max(0, edge - panel.Left), 0,
+                    Math.Max(0, panel.Right - (page.ClientSize.Width - edge)), 0);
+                int width = Math.Max(1, panel.ClientSize.Width - panel.Padding.Horizontal);
+                int height = footer.GetPreferredSize(new Size(width, 0)).Height;
+                var bounds = new Rectangle(panel.Padding.Left, panel.Padding.Top, width, height);
+                if (footer.Bounds != bounds) footer.Bounds = bounds;
+                return height + panel.Padding.Vertical;
+            }
+
             void ConfigureProfileList(string listName, string panelName, params string[] buttonNames)
             {
                 var list = (ListView)controls[listName];
                 var panel = (Panel)controls[panelName];
+                var footer = CalendarActions(panel, buttonNames);
+                bool arranging = false;
                 list.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                 Layout();
                 list.Parent!.SizeChanged += (_, _) => Layout();
+                footer.Layout += (_, _) => Layout();
+                footer.DpiChangedAfterParent += (_, _) => Layout();
+                footer.HandleCreated += (_, _) => Layout();
                 panel.SizeChanged += (_, _) => Layout();
+                panel.LocationChanged += (_, _) => Layout();
                 panel.Parent!.SizeChanged += (_, _) => Layout();
+                foreach (var button in buttonNames.Select(name => (Button)controls[name]))
+                    button.FontChanged += (_, _) => Layout();
 
                 void Layout()
                 {
-                    int margin = Scale(list, 4);
-                    int gap = Scale(list, 4);
-                    int panelTop = panel.Parent!.ClientSize.Height - panel.Height;
-                    list.Left = margin;
-                    list.Top = margin;
-                    list.Width = Math.Max(Scale(list, 100), panel.Parent.ClientSize.Width - 2 * margin);
-                    list.Height = Math.Max(Scale(list, 64), panelTop - list.Top - gap);
-                    FitProfileColumns(list, list.Columns.Count == 3 ? new[] { 120, 180, 120 }
-                        : new[] { 120, 64, 64, 64, 64, 64, 64, 64 });
-                    var buttons = buttonNames.Select(name => (Button)controls[name]).ToArray();
-                    int right = panel.ClientSize.Width - Scale(panel, 8);
-                    foreach (Button button in buttons.Reverse())
+                    if (arranging || panel.IsDisposed || (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized) return;
+                    arranging = true;
+                    try
                     {
-                        button.Width = Scale(panel, 92);
-                        button.Height = Scale(button, 30);
-                        button.Left = right - button.Width;
-                        button.Top = (panel.ClientSize.Height - button.Height) / 2;
-                        button.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-                        right = button.Left - Scale(panel, 8);
+                        int footerHeight = CalendarFooterHeight(panel, footer, panel.Parent);
+                        if (panel.Height != footerHeight) panel.Height = footerHeight;
+                        int margin = Scale(list, 4);
+                        int gap = 0;
+                        int panelTop = panel.Top;
+                        list.Left = margin;
+                        list.Top = margin;
+                        list.Width = Math.Max(Scale(list, 100), panel.Parent.ClientSize.Width - 2 * margin);
+                        list.Height = Math.Max(Scale(list, 64), panelTop - list.Top - gap);
+                        FitProfileColumns(list, list.Columns.Count == 3 ? new[] { 120, 180, 120 }
+                            : new[] { 120, 64, 64, 64, 64, 64, 64, 64 });
                     }
+                    finally { arranging = false; }
                 }
             }
 
@@ -444,51 +458,58 @@ namespace Gurux.DLMS.UI
                 var actions = (ListView)controls[actionsName];
                 var splitter = splitterName == null ? null : controls[splitterName];
                 var panel = (Panel)controls[panelName];
+                var footer = CalendarActions(panel, buttonNames);
+                bool arranging = false;
                 int daysWidth = days.Width;
                 days.Dock = DockStyle.None;
                 days.Width = daysWidth;
                 days.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
                 Layout();
                 page.SizeChanged += (_, _) => Layout();
+                footer.Layout += (_, _) => Layout();
+                footer.DpiChangedAfterParent += (_, _) => Layout();
+                footer.HandleCreated += (_, _) => Layout();
                 panel.SizeChanged += (_, _) => Layout();
+                panel.LocationChanged += (_, _) => Layout();
                 panel.Parent!.SizeChanged += (_, _) => Layout();
+                foreach (var button in buttonNames.Select(name => (Button)controls[name]))
+                    button.FontChanged += (_, _) => Layout();
 
                 void Layout()
                 {
-                    int margin = Scale(page, 4);
-                    int separator = Scale(page, splitter == null ? 3 : splitter.Width);
-                    int panelTop = page.ClientSize.Height - panel.Height;
-                    int bottom = Math.Max(Scale(page, 64), panelTop - margin);
-                    days.Left = margin;
-                    days.Top = margin;
-                    days.Width = daysWidth;
-                    days.Height = bottom - margin;
-                    actions.Left = days.Right + separator;
-                    actions.Top = margin;
-                    actions.Width = Math.Max(Scale(page, 100), page.ClientSize.Width - margin - actions.Left);
-                    actions.Height = bottom - margin;
-                    FitProfileColumns(days, 48);
-                    FitProfileColumns(actions, 100, 150, 100);
-                    actions.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-                    if (splitter != null)
+                    if (arranging || panel.IsDisposed || (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized) return;
+                    arranging = true;
+                    try
                     {
-                        splitter.Left = days.Right;
-                        splitter.Top = margin;
-                        splitter.Height = bottom - margin;
-                        splitter.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+                        int footerHeight = CalendarFooterHeight(panel, footer, page);
+                        if (panel.Height != footerHeight) panel.Height = footerHeight;
+                        int margin = Scale(page, 4);
+                        int separator = Scale(page, splitter == null ? 3 : splitter.Width);
+                        int panelTop = panel.Top;
+                        int bottom = Math.Max(Scale(page, 64), panelTop);
+                        days.Left = margin;
+                        days.Top = margin;
+                        days.Width = daysWidth;
+                        days.Height = bottom - margin;
+                        actions.Left = days.Right + separator;
+                        actions.Top = margin;
+                        actions.Width = Math.Max(Scale(page, 100), page.ClientSize.Width - margin - actions.Left);
+                        actions.Height = bottom - margin;
+                        FitProfileColumns(days, 48);
+                        FitProfileColumns(actions, 100, 150, 100);
+                        actions.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                        if (splitter != null)
+                        {
+                            splitter.Left = days.Right;
+                            splitter.Top = margin;
+                            splitter.Height = bottom - margin;
+                            splitter.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+                        }
                     }
-                    int right = panel.ClientSize.Width - Scale(panel, 8);
-                    foreach (Button button in buttonNames.Select(name => (Button)controls[name]).Reverse())
-                    {
-                        button.Width = Scale(panel, 92);
-                        button.Height = Scale(button, 30);
-                        button.Left = right - button.Width;
-                        button.Top = (panel.ClientSize.Height - button.Height) / 2;
-                        button.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-                        right = button.Left - Scale(panel, 6);
-                    }
+                    finally { arranging = false; }
                 }
             }
+
 
             foreach (TabPage page in Descendants(group).OfType<TabPage>())
             {
@@ -816,7 +837,7 @@ namespace Gurux.DLMS.UI
                 strip.BackColor = Color.FromArgb(245, 247, 251);
                 strip.ForeColor = Ink;
             }
-            if (control is GXButton button)
+            if (control is Button button && (button is GXButton || button.FindForm() is GXDLMSActivityCalendarView or GXDLMSModemConfigurationView))
             {
                 // Keep the existing font/size on fixed-coordinate editors.
                 button.FlatStyle = FlatStyle.Flat;
@@ -929,13 +950,14 @@ namespace Gurux.DLMS.UI
             };
             table.Controls.Add(caption, 0, row);
             field.Dock = DockStyle.Fill;
-            var fieldMargin = new Padding(0, 4, 0, 4);
+            var fieldMargin = new Padding(0, Scale(table, 4), 0, Scale(table, 4));
             field.Margin = fieldMargin;
             field.Font = table.Parent?.Font ?? BodyFont;
             if (!string.IsNullOrEmpty(label)) field.AccessibleName = label;
             field.TabIndex = row * 2;
             Control cell = field;
             if (field is GXValueField valueField) valueField.ApplyModernStyle(compact: true);
+            AlignTallCaption(caption, field);
             if (field is TextBox textBox)
             {
                 textBox.BorderStyle = BorderStyle.None;
@@ -983,6 +1005,7 @@ namespace Gurux.DLMS.UI
                         button.Size = new Size(Scale(table, actionWidth), Scale(table, 32));
                         button.MinimumSize = button.MaximumSize = button.Size;
                     }
+                    ButtonLayoutPolicy.ApplyToButton(button, minimumWidth: actionWidth > 0 ? actionWidth : 100);
                 }
                 var actionRow = new CompactActionRow(table, row, cell, action, height) { TabIndex = row * 2 };
                 table.Controls.Add(actionRow, 1, row);
@@ -998,9 +1021,40 @@ namespace Gurux.DLMS.UI
             button.Font = BodyFont;
             button.AutoSize = true;
             button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            button.MinimumSize = new Size(0, 32);
-            button.Padding = new Padding(10, 3, 10, 3);
+            button.MinimumSize = new Size(0, Scale(button, 32));
+            // Native button chrome already reserves vertical text insets. Extra
+            // top/bottom padding can clip the line inside the standard32px action.
+            button.Padding = new Padding(Scale(button, 10), 0, Scale(button, 10), 0);
             button.Dock = DockStyle.None;
+        }
+
+        /// <summary>Native actions on the same field rail and height as adjacent property inputs.</summary>
+        public static void CompactActions(TableLayoutPanel table, string caption, params Button[] buttons)
+        {
+            var actions = new ActionButtonPanel
+            {
+                Name = "PropertyActions", Dock = DockStyle.Fill, AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = true,
+                Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.White,
+                MinimumSize = new Size(0, Scale(table, 32))
+            };
+            for (int i = 0; i < buttons.Length; ++i)
+            {
+                var button = buttons[i];
+                CompactButton(button);
+                button.MinimumSize = new Size(0, Scale(table, 32));
+                button.Margin = new Padding(0, 0, i + 1 == buttons.Length ? 0 : Scale(table, 8), 0);
+                button.TabIndex = i;
+                actions.Controls.Add(button);
+            }
+            ButtonLayoutPolicy.Apply(actions, buttons, alignRight: false);
+            CompactRow(table, caption, actions, height: 40);
+            // The group owns the row's four-pixel inset; do not double it
+            // with the generic property's cell margins.
+            actions.Margin = Padding.Empty;
+            // A very narrow field cell may wrap several actions; reserve their
+            // measured height instead of clipping the second native button.
+            table.RowStyles[table.RowCount - 1].SizeType = SizeType.AutoSize;
         }
 
         private static void CompactObject(Form form, bool register)
@@ -1018,10 +1072,7 @@ namespace Gurux.DLMS.UI
             if (register)
             {
                 var button = (Button)Find(oldGroup, "ResetBtn");
-                CompactButton(button);
-                var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
-                actions.Controls.Add(button);
-                CompactRow(table, "Action", actions, height: 48);
+                CompactActions(table, "Action", button);
             }
             form.Controls.Add(table);
             form.Controls.Remove(oldGroup);
@@ -1044,13 +1095,13 @@ namespace Gurux.DLMS.UI
             CompactRow(table, "OBIS code", controls["LogicalNameTB"]);
             CompactRow(table, "Meter time", controls["TimeTB"], controls["UpdateTimeBtn"], actionWidth: 140);
             CompactRow(table, "Time zone (min)", controls["TimeZoneTB"], controls["CurrentTimeZoneBtn"], actionWidth: 140);
+            ButtonLayoutPolicy.MatchInlineWidths((Button)controls["UpdateTimeBtn"], (Button)controls["CurrentTimeZoneBtn"]);
             var zone = (CheckBox)controls["TimeZoneCb"];
             zone.Text = "Use time zone";
             CompactRow(table, "", zone, height: 32);
             CompactRow(table, "Status", controls["StatusTB"], height: 120);
             var clockBase = (GXValueField)controls["ClockBaseTB"];
-            CompactRow(table, "Clock base", clockBase, height: 34);
-            clockBase.Margin = new Padding(0, 2, 0, 2);
+            CompactRow(table, "Clock base", clockBase);
             Section(table, "Daylight saving");
             var enabled = (CheckBox)controls["EnabledCB"];
             enabled.Text = "Enabled";
@@ -1059,6 +1110,8 @@ namespace Gurux.DLMS.UI
             CompactRow(table, "Ends", controls["EndTB"]);
             CompactRow(table, "Deviation (min)", controls["DeviationTB"]);
             Section(table, "Clock actions");
+            // Keep complete action names; the legacy trailing dots looked like truncation.
+            ((Button)controls["PresetAdjustingTimeBtn"]).Text = "Preset Adjusting Time";
             var actionNames = names.Where(name => controls[name] is GXButton &&
                 name != "UpdateTimeBtn" && name != "CurrentTimeZoneBtn").ToArray();
             var actions = new TableLayoutPanel
@@ -1078,13 +1131,51 @@ namespace Gurux.DLMS.UI
                 CompactButton(button);
                 button.AutoSize = false;
                 button.Dock = DockStyle.Fill;
-                button.Margin = new Padding(0, 0, Scale(form, 8), Scale(form, 8));
+                button.Margin = new Padding(i % 2 == 0 ? 0 : Scale(form, 4), Scale(form, 4), i % 2 == 0 ? Scale(form, 4) : 0, Scale(form, 4));
                 button.MinimumSize = new Size(0, Scale(form, 32));
                 actions.Controls.Add(button, i % 2, i / 2);
             }
             int row = table.RowCount++;
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             table.Controls.Add(actions, 1, row);
+            bool fittingActions = false;
+            void FitClockActions()
+            {
+                if (fittingActions || actions.IsDisposed || actions.ClientSize.Width < 1 ||
+                    (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized) return;
+                fittingActions = true;
+                actions.SuspendLayout();
+                try
+                {
+                    var buttons = actionNames.Select(name => (Button)controls[name]).ToArray();
+                    int widest = buttons.Select(button => ButtonLayoutPolicy.GetPreferredSize(button).Width).Max();
+                    int columns = actions.ClientSize.Width >= widest * 2 + Scale(form, 8) ? 2 : 1;
+                    if (actions.ColumnCount != columns)
+                    {
+                        actions.ColumnCount = columns;
+                        actions.ColumnStyles.Clear();
+                        for (int column = 0; column < columns; ++column)
+                            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columns));
+                        actions.RowCount = (buttons.Length + columns - 1) / columns;
+                        actions.RowStyles.Clear();
+                        for (int actionRow = 0; actionRow < actions.RowCount; ++actionRow)
+                            actions.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    }
+                    for (int i = 0; i < buttons.Length; ++i)
+                    {
+                        actions.SetCellPosition(buttons[i], new TableLayoutPanelCellPosition(i % columns, i / columns));
+                        buttons[i].Margin = new Padding(i % columns > 0 ? Scale(form, 4) : 0, Scale(form, 4),
+                            i % columns + 1 < columns ? Scale(form, 4) : 0, Scale(form, 4));
+                        buttons[i].MinimumSize = new Size(0, Scale(form, 32));
+                    }
+                }
+                finally { actions.ResumeLayout(true); fittingActions = false; }
+            }
+            actions.SizeChanged += (_, _) => FitClockActions();
+            actions.DpiChangedAfterParent += (_, _) => FitClockActions();
+            foreach (var button in actionNames.Select(name => (Button)controls[name]))
+                button.FontChanged += (_, _) => FitClockActions();
+            FitClockActions();
             table.SetColumnSpan(actions, table.ColumnCount - 1);
             form.Controls.Add(table);
             foreach (Control group in oldGroups) { form.Controls.Remove(group); group.Dispose(); }
@@ -1116,43 +1207,73 @@ namespace Gurux.DLMS.UI
                     control.Margin = Padding.Empty;
                     root.Controls.Add(control, 0, row);
                 }
-                Add(new Label { Text = "Profile Generic", Font = new Font(BodyFont, FontStyle.Bold),
-                    TextAlign = ContentAlignment.MiddleLeft }, SizeType.Absolute, Scale(form, 28));
-                var metadata = new TableLayoutPanel { ColumnCount = 4, RowCount = 3, BackColor = Color.White };
+                var header = new TableLayoutPanel
+                {
+                    Name = "ProfileHeader", ColumnCount = 2, RowCount = 2,
+                    BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty
+                };
+                header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 136)));
+                header.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 28)));
+                header.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                header.Controls.Add(new Label { Text = "Profile Generic", Font = new Font(BodyFont, FontStyle.Bold),
+                    Dock = DockStyle.Fill, Margin = Padding.Empty, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+                var metadata = new TableLayoutPanel { Name = "ProfileMetadata", Dock = DockStyle.Fill,
+                    Margin = Padding.Empty, ColumnCount = 4, RowCount = 3, BackColor = Color.White };
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 112)));
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 100)));
                 metadata.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
                 string[] names = { "LogicalNameTB", "CapturePeriodTB", "EntriesInUseTB", "EntriesTB", "SortModeTB" };
                 string[] labels = { "Logical Name", "Period", "Entries in use", "Entries", "Sort mode" };
-                for (int row = 0; row < 3; ++row) metadata.RowStyles.Add(new RowStyle(SizeType.Percent, 33.333f));
+                for (int row = 0; row < 3; ++row) metadata.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 40)));
                 for (int i = 0; i < names.Length; ++i)
                 {
                     int column = (i % 2) * 2;
-                    metadata.Controls.Add(new Label { Text = labels[i], Dock = DockStyle.Fill,
-                        TextAlign = ContentAlignment.MiddleLeft, ForeColor = Muted }, column, i / 2);
+                    metadata.Controls.Add(new Label { Text = labels[i], Dock = DockStyle.Fill, Margin = Padding.Empty,
+                        TextAlign = i == 4 ? ContentAlignment.TopLeft : ContentAlignment.MiddleLeft,
+                        Padding = i == 4 ? new Padding(0, Scale(form, 10), 0, 0) : Padding.Empty,
+                        ForeColor = Muted }, column, i / 2);
                     var field = (GXValueField)controls[names[i]];
-                    field.Dock = DockStyle.Fill;
+                    field.Dock = DockStyle.Top;
+                    field.Height = Scale(form, 32);
+                    field.MaximumSize = new Size(0, Scale(form, 32));
                     field.Margin = new Padding(0, Scale(form, 4), Scale(form, 8), Scale(form, 4));
                     field.ApplyModernStyle(compact: true);
                     metadata.Controls.Add(field, column + 1, i / 2);
                 }
                 EditorLayoutPolicy.ConstrainSection(metadata);
-                Add(metadata, SizeType.Absolute, Scale(form, 120));
-                // The reference has its own full-width row. Its native selectable
-                // text wraps and the row follows its measured height at each DPI.
+                header.Controls.Add(metadata, 0, 1);
                 var reference = (GXObjectReferenceView)controls["SortObjectReference"];
-                var referenceRow = new TableLayoutPanel { Name = "SortObjectRow", ColumnCount = 2, RowCount = 1, BackColor = Color.White };
-                referenceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 112)));
-                referenceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                referenceRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-                referenceRow.Controls.Add(new Label { Text = "Sort object", Dock = DockStyle.Fill,
-                    TextAlign = ContentAlignment.TopLeft, Padding = new Padding(0, Scale(form, 10), 0, 0), ForeColor = Muted }, 0, 0);
+                metadata.Controls.Add(new Label { Text = "Sort object", Dock = DockStyle.Fill, Margin = Padding.Empty,
+                    TextAlign = ContentAlignment.TopLeft, Padding = new Padding(0, Scale(form, 10), 0, 0), ForeColor = Muted }, 2, 2);
                 reference.Dock = DockStyle.Fill;
+                reference.AutoScroll = true;
                 reference.Margin = new Padding(0, Scale(form, 4), Scale(form, 8), Scale(form, 4));
-                referenceRow.Controls.Add(reference, 1, 0);
-                int referenceRowIndex = root.RowCount;
-                Add(referenceRow, SizeType.Absolute, Scale(form, 40));
+                metadata.Controls.Add(reference, 3, 2);
+                var topActions = new TableLayoutPanel
+                {
+                    Name = "ProfileHeaderActions", ColumnCount = 1, RowCount = 3,
+                    Dock = DockStyle.Top, BackColor = Color.White,
+                    Margin = new Padding(Scale(form, 16), Scale(form, 4), 0, 0), Padding = Padding.Empty
+                };
+                topActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                topActions.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 32)));
+                topActions.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 8)));
+                topActions.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 32)));
+                var topButtons = new[] { (Button)controls["ResetBtn"], (Button)controls["CaptureBtn"] };
+                for (int i = 0; i < topButtons.Length; ++i)
+                {
+                    var button = topButtons[i];
+                    CompactButton(button); StyleButton(button, false);
+                    button.Font = BodyFont; button.AutoSize = false;
+                    button.Dock = DockStyle.Fill; button.Margin = Padding.Empty; button.TabIndex = i;
+                    topActions.Controls.Add(button, 0, i * 2);
+                }
+                header.Controls.Add(topActions, 1, 0);
+                header.SetRowSpan(topActions, 2);
+                int headerRowIndex = root.RowCount;
+                Add(header, SizeType.Absolute, Scale(form, 148));
                 var reading = new TableLayoutPanel { ColumnCount = 4, RowCount = 4, BackColor = Color.White };
                 reading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(form, 112)));
                 reading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -1175,25 +1296,121 @@ namespace Gurux.DLMS.UI
                         {
                             label.AutoSize = false;
                             label.TextAlign = ContentAlignment.MiddleLeft;
-                            label.Margin = new Padding(3);
+                            label.Margin = new Padding(0, Scale(form, 4), Scale(form, 8), Scale(form, 4));
                             label.ForeColor = Muted;
+                        }
+                        // Keep the bound editors and native arrows. Dates retain
+                        // their preferred height so the native checkbox stays compact.
+                        if (field is NumericUpDown) UseStandardInputHeight(field);
+                        if (field is DateTimePicker)
+                        {
+                            field.Dock = DockStyle.None;
+                            field.Anchor = AnchorStyles.Left | AnchorStyles.Right;
                         }
                         reading.Controls.Add(field, col, row);
                     }
                 }
                 EditorLayoutPolicy.ConstrainSection(reading);
-                Add(reading, SizeType.Absolute, Scale(form, 128));
+                int readingRowIndex = root.RowCount;
+                Add(reading, SizeType.Absolute, Scale(form, 160));
+                bool? stackedReading = null;
                 bool IsMinimized() => (form.TopLevelControl as Form)?.WindowState == FormWindowState.Minimized;
+                bool fittingMetadata = false;
+                void FitMetadataHeights()
+                {
+                    if (fittingMetadata || metadata.IsDisposed || IsMinimized()) return;
+                    fittingMetadata = true;
+                    metadata.SuspendLayout();
+                    try
+                    {
+                        // Restore logical sizes after the native parenting/DPI pass;
+                        // a construction-time maximum can otherwise remain scaled down.
+                        int height = Scale(metadata, 32);
+                        for (int row = 0; row < 2; ++row)
+                            if (metadata.RowStyles[row].Height != Scale(metadata, 40))
+                                metadata.RowStyles[row].Height = Scale(metadata, 40);
+                        foreach (string name in names)
+                        {
+                            var field = (GXValueField)controls[name];
+                            var maximum = new Size(field.MaximumSize.Width, height);
+                            if (field.MaximumSize != maximum) field.MaximumSize = maximum;
+                            if (field.Height != height) field.Height = height;
+                            var margin = new Padding(0, Scale(metadata, 4), Scale(metadata, 8), Scale(metadata, 4));
+                            if (field.Margin != margin) field.Margin = margin;
+                        }
+                    }
+                    finally { metadata.ResumeLayout(true); fittingMetadata = false; }
+                }
                 void AlignProfileColumns()
                 {
                     if (IsMinimized() || root.ClientSize.Width < Scale(form, 150)) return;
+                    FitMetadataHeights();
                     bool narrow = root.ClientSize.Width < Scale(form, 720);
-                    referenceRow.ColumnStyles[0].Width = Scale(form, narrow ? 90 : 112);
-                    foreach (var table in new[] { metadata, reading })
+                    // Keep the actions above the metadata on narrow screens, so
+                    // their reserved column cannot squeeze the paired inputs.
+                    header.SuspendLayout();
+                    try
                     {
-                        table.ColumnStyles[0].Width = Scale(form, narrow ? 90 : 112);
-                        table.ColumnStyles[2].Width = Scale(form, narrow ? 80 : 100);
+                        header.ColumnStyles[1].Width = Scale(form, 136);
+                        header.RowStyles[0].Height = Scale(form, narrow ? 76 : 28);
+                        if (narrow)
+                        { header.SetRowSpan(topActions, 1); header.SetColumnSpan(metadata, 2); }
+                        else
+                        { header.SetColumnSpan(metadata, 1); header.SetRowSpan(topActions, 2); }
+                        var actionSize = new Size(Scale(form, 120), Scale(form, 72));
+                        topActions.MinimumSize = topActions.MaximumSize = actionSize;
+                        topActions.Size = actionSize;
+                        topActions.Margin = new Padding(Scale(form, 16), Scale(form, 4), 0, 0);
+                        topActions.RowStyles[0].Height = topActions.RowStyles[2].Height = Scale(form, 32);
+                        topActions.RowStyles[1].Height = Scale(form, 8);
+                        foreach (var button in topButtons)
+                            button.MinimumSize = button.MaximumSize = new Size(Scale(form, 120), Scale(form, 32));
                     }
+                    finally { header.ResumeLayout(true); }
+                    metadata.ColumnStyles[0].Width = reading.ColumnStyles[0].Width = Scale(form, 112);
+                    metadata.ColumnStyles[2].Width = Scale(form, narrow ? 80 : 100);
+                    int propertyWidth = Math.Max(1, Math.Min(Scale(form, 800),
+                        root.ClientSize.Width - root.Padding.Horizontal - (narrow ? 0 : Scale(form, 136))));
+                    if (reading.MaximumSize.Width != propertyWidth)
+                        reading.MaximumSize = new Size(propertyWidth, reading.MaximumSize.Height);
+                    if (stackedReading == narrow) return;
+                    stackedReading = narrow;
+                    reading.SuspendLayout();
+                    try
+                    {
+                        reading.RowCount = narrow ? 6 : 4;
+                        reading.RowStyles.Clear();
+                        for (int row = 0; row < reading.RowCount; ++row)
+                            reading.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / reading.RowCount));
+                        reading.ColumnStyles[1].SizeType = SizeType.Percent;
+                        reading.ColumnStyles[1].Width = narrow ? 100 : 50;
+                        reading.ColumnStyles[2].Width = Scale(form, narrow ? 0 : 100);
+                        reading.ColumnStyles[3].SizeType = narrow ? SizeType.Absolute : SizeType.Percent;
+                        reading.ColumnStyles[3].Width = narrow ? Scale(form, 52) : 50;
+                        void Place(string name, int column, int row, int span = 1)
+                        {
+                            var field = controls[name];
+                            reading.SetColumnSpan(field, span);
+                            reading.SetCellPosition(field, new TableLayoutPanelCellPosition(column, row));
+                        }
+                        if (narrow)
+                        {
+                            Place("ReadEntryBtn", 0, 0); Place("StartEntry", 1, 0, 3);
+                            Place("label2", 0, 1); Place("EndEntry", 1, 1, 3);
+                            Place("ReadLastRB", 0, 2); Place("ReadLastTB", 1, 2, 2); Place("DaysLbl", 3, 2);
+                            Place("ReadFromRB", 0, 3); Place("StartPick", 1, 3, 3);
+                            Place("ToLbl", 0, 4); Place("ToPick", 1, 4, 3);
+                            Place("ReadAllRB", 0, 5);
+                        }
+                        else
+                        {
+                            for (int row = 0; row < readingRows.Length; ++row)
+                                for (int column = 0; column < readingRows[row].Length; ++column)
+                                    Place(readingRows[row][column], column, row);
+                        }
+                        root.RowStyles[readingRowIndex].Height = Scale(form, narrow ? 240 : 160);
+                    }
+                    finally { reading.ResumeLayout(true); }
                 }
                 root.SizeChanged += (_, _) => AlignProfileColumns();
                 AlignProfileColumns();
@@ -1201,7 +1418,7 @@ namespace Gurux.DLMS.UI
                 Add(tabs, SizeType.Percent, 100);
                 FlowLayoutPanel Footer(params string[] buttonNames)
                 {
-                    var footer = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Bottom,
+                    var footer = new ActionButtonPanel { AutoSize = true, Dock = DockStyle.Bottom,
                         FlowDirection = FlowDirection.RightToLeft, BackColor = Color.White,
                         Padding = new Padding(0, Scale(form, 8), 0, 0) };
                     foreach (string name in buttonNames.Reverse())
@@ -1216,6 +1433,7 @@ namespace Gurux.DLMS.UI
                         button.Margin = new Padding(Scale(form, 8), 0, 0, Scale(form, 4));
                         footer.Controls.Add(button);
                     }
+                    ButtonLayoutPolicy.Apply(footer, buttonNames.Select(name => (Button)controls[name]).ToArray(), minimumWidth: 120);
                     return footer;
                 }
                 foreach (TabPage page in tabs.TabPages)
@@ -1242,7 +1460,7 @@ namespace Gurux.DLMS.UI
                 var captureFooter = Footer("ColumnAddBtn", "ColumnEditBtn", "ColumnRemoveBtn");
                 capturePage.Controls.Add(captureFooter);
                 list.BringToFront();
-                var actions = Footer("ResetBtn", "CaptureBtn", "AddWhiteBtn", "AddBlackBtn", "RemoveBtn");
+                var actions = Footer("AddWhiteBtn", "AddBlackBtn", "RemoveBtn");
                 Add(actions, SizeType.AutoSize, 0);
                 // Fixed metadata plus wrapping actions must not consume the data
                 // area. Keep several rows visible and let the outer editor scroll.
@@ -1276,12 +1494,17 @@ namespace Gurux.DLMS.UI
                         // Use the settled row width, not a child's transient width
                         // while TableLayoutPanel is arranging or the host is minimized.
                         AlignProfileColumns();
-                        int width = referenceRow.ClientSize.Width - (int)referenceRow.ColumnStyles[0].Width - reference.Margin.Horizontal;
+                        int[] widths = metadata.GetColumnWidths();
+                        int width = widths.Length == 4 ? widths[3] - reference.Margin.Horizontal : 0;
                         if (width < Scale(form, 80)) return;
                         int height = reference.GetPreferredSize(new Size(width, 0)).Height + reference.Margin.Vertical;
-                        height = Math.Max(Scale(form, 40), height);
-                        if (Math.Abs(root.RowStyles[referenceRowIndex].Height - height) > 1)
-                            root.RowStyles[referenceRowIndex].Height = height;
+                        height = Math.Max(Scale(form, 40), Math.Min(Scale(form, 128), height));
+                        if (Math.Abs(metadata.RowStyles[2].Height - height) > 1)
+                            metadata.RowStyles[2].Height = height;
+                        int headingHeight = Scale(form, root.ClientSize.Width < Scale(form, 720) ? 76 : 28);
+                        int headerHeight = headingHeight + Scale(form, 80) + height;
+                        if (Math.Abs(root.RowStyles[headerRowIndex].Height - headerHeight) > 1)
+                            root.RowStyles[headerRowIndex].Height = headerHeight;
                         FitProfileHeight();
                     }
                     finally { fittingReference = false; }
@@ -1301,8 +1524,18 @@ namespace Gurux.DLMS.UI
                         FitReferenceHeight();
                     }));
                 }
+                metadata.HandleCreated += (_, _) => QueueReferenceLayout();
+                metadata.DpiChangedAfterParent += (_, _) => QueueReferenceLayout();
+                foreach (string name in names)
+                {
+                    var field = (GXValueField)controls[name];
+                    field.HandleCreated += (_, _) => QueueReferenceLayout();
+                    field.DpiChangedAfterParent += (_, _) => QueueReferenceLayout();
+                    field.FontChanged += (_, _) => QueueReferenceLayout();
+                    field.PresentationLayoutChanged += (_, _) => QueueReferenceLayout();
+                }
                 reference.ContentSizeChanged += (_, _) => QueueReferenceLayout();
-                referenceRow.SizeChanged += (_, _) => QueueReferenceLayout();
+                metadata.SizeChanged += (_, _) => QueueReferenceLayout();
                 reference.DpiChangedAfterParent += (_, _) => QueueReferenceLayout();
                 form.SizeChanged += (_, _) => QueueReferenceLayout();
                 root.SizeChanged += (_, _) => QueueReferenceLayout();
@@ -1364,7 +1597,7 @@ namespace Gurux.DLMS.UI
                 tree.BorderStyle = BorderStyle.FixedSingle;
                 content.Controls.Add(tree, 0, treeRow);
                 content.SetColumnSpan(tree, 3);
-                var footer = new FlowLayoutPanel
+                var footer = new ActionButtonPanel
                 {
                     Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft,
                     WrapContents = false, BackColor = Color.White, Margin = Padding.Empty,
@@ -1381,8 +1614,9 @@ namespace Gurux.DLMS.UI
                     button.Font = BodyFont;
                     footer.Controls.Add(button);
                 }
+                ButtonLayoutPolicy.Apply(footer, buttons);
                 int footerRow = content.RowCount++;
-                content.RowStyles.Add(new RowStyle(SizeType.Absolute, Scale(form, 44)));
+                content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                 content.Controls.Add(footer, 0, footerRow);
                 content.SetColumnSpan(footer, 3);
                 form.Controls.Remove(group);
@@ -1522,12 +1756,22 @@ namespace Gurux.DLMS.UI
             list.SizeChanged += (_, _) => ResizeColumns();
             ResizeColumns();
 
-            var footer = new FlowLayoutPanel
+            var footer = new ActionButtonPanel
             {
                 Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false,
-                BackColor = Color.White, Margin = Padding.Empty, Padding = Padding.Empty
+                BackColor = Color.White, Margin = Padding.Empty,
+                Padding = new Padding(0, Scale(page, 4), 0, Scale(page, 4))
             };
-            foreach (Button button in buttons.Reverse()) footer.Controls.Add(button);
+            for (int i = buttons.Length - 1; i >= 0; --i)
+            {
+                var button = buttons[i];
+                // The rightmost action meets the list edge; only peer actions
+                // need an inner gap. Native default margins add a stray inset.
+                button.Margin = new Padding(i > 0 ? Scale(page, 8) : 0, 0, 0, 0);
+                button.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                footer.Controls.Add(button);
+            }
+            ButtonLayoutPolicy.Apply(footer, buttons);
             if (activeLabel == null)
                 layout.Controls.Add(footer, 0, 1);
             else
@@ -1545,28 +1789,38 @@ namespace Gurux.DLMS.UI
             foreach (TabControl tabs in Descendants(form).OfType<TabControl>().ToArray())
             {
                 if (tabs is AssociationTabControl) continue;
-                tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
-                int widestCaption = tabs.TabPages.Cast<TabPage>()
-                    .Select(page => TextRenderer.MeasureText(page.Text, tabs.Font).Width)
-                    .DefaultIfEmpty(0).Max();
-                tabs.SizeMode = TabSizeMode.Fixed;
-                tabs.ItemSize = new Size(Math.Min(Scale(tabs, 220), Math.Max(Scale(tabs, 80), widestCaption + Scale(tabs, 24))), Scale(tabs, 24));
-                tabs.BackColor = Color.White;
-                tabs.HandleCreated += (_, _) => DisableTabTheme(tabs);
-                if (tabs.IsHandleCreated) DisableTabTheme(tabs);
-                void AttachPainter()
-                {
-                    if (!TabPainters.TryGetValue(tabs, out _))
-                        TabPainters.Add(tabs, new TabHeaderPainter(tabs));
-                }
-                tabs.HandleCreated += (_, _) => AttachPainter();
-                if (tabs.IsHandleCreated) AttachPainter();
-                tabs.DrawItem += DrawRoundedTab;
-                foreach (TabPage page in tabs.TabPages)
-                {
-                    page.BackColor = Color.White;
-                    page.UseVisualStyleBackColor = false;
-                }
+                RoundTabs(tabs);
+            }
+        }
+
+        /// <summary>
+        /// Give an existing tab control the shared rounded tab headers (as on the main window and the object
+        /// editors). The control, its pages and their selection and keyboard behavior are unchanged; only the
+        /// header painting, tab size and page colors change.
+        /// </summary>
+        public static void RoundTabs(TabControl tabs, int headerHeight = 24)
+        {
+            tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+            int widestCaption = tabs.TabPages.Cast<TabPage>()
+                .Select(page => TextRenderer.MeasureText(page.Text, tabs.Font).Width)
+                .DefaultIfEmpty(0).Max();
+            tabs.SizeMode = TabSizeMode.Fixed;
+            tabs.ItemSize = new Size(Math.Min(Scale(tabs, 220), Math.Max(Scale(tabs, 80), widestCaption + Scale(tabs, 24))), Scale(tabs, headerHeight));
+            tabs.BackColor = Color.White;
+            tabs.HandleCreated += (_, _) => DisableTabTheme(tabs);
+            if (tabs.IsHandleCreated) DisableTabTheme(tabs);
+            void AttachPainter()
+            {
+                if (!TabPainters.TryGetValue(tabs, out _))
+                    TabPainters.Add(tabs, new TabHeaderPainter(tabs));
+            }
+            tabs.HandleCreated += (_, _) => AttachPainter();
+            if (tabs.IsHandleCreated) AttachPainter();
+            tabs.DrawItem += DrawRoundedTab;
+            foreach (TabPage page in tabs.TabPages)
+            {
+                page.BackColor = Color.White;
+                page.UseVisualStyleBackColor = false;
             }
         }
 
@@ -1576,8 +1830,13 @@ namespace Gurux.DLMS.UI
             catch (DllNotFoundException) { }
             catch (EntryPointNotFoundException) { }
             tabs.BackColor = Color.White;
+            // Hide the dotted focus rectangle until the keyboard is used (WM_CHANGEUISTATE, UIS_SET, UISF_HIDEFOCUS).
+            SendMessage(tabs.Handle, 0x0127, (IntPtr)0x10001, IntPtr.Zero);
             tabs.Invalidate();
         }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
         private static extern int SetWindowTheme(IntPtr hWnd, string? appName, string? idList);
@@ -1596,6 +1855,9 @@ namespace Gurux.DLMS.UI
             if (sender is not TabControl tabs || e.Index < 0 || e.Index >= tabs.TabPages.Count) return;
             var bounds = tabs.GetTabRect(e.Index);
             bool selected = e.Index == tabs.SelectedIndex;
+            // Cover the native header edge and focus cue so only the rounded shape shows.
+            using (var cover = new SolidBrush(Color.White))
+                e.Graphics.FillRectangle(cover, bounds.Left, 0, bounds.Width + 1, bounds.Bottom + 1);
             bounds.Y = Scale(tabs, 2);
             int join = Math.Max(tabs.GetTabRect(0).Bottom, tabs.DisplayRectangle.Top) - Scale(tabs, 1);
             bounds.Height = Math.Max(1, join - bounds.Top + Scale(tabs, 1));
@@ -1647,7 +1909,7 @@ namespace Gurux.DLMS.UI
             }
             form.AutoScroll = false;
             form.Controls.Add(body);
-            var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true,
+            var footer = new ActionButtonPanel { Dock = DockStyle.Bottom, AutoSize = true,
                 FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8), WrapContents = false };
             CompactButton(accept);
             if (!ReferenceEquals(accept, cancel))
@@ -1655,6 +1917,8 @@ namespace Gurux.DLMS.UI
             if (!ReferenceEquals(accept, cancel))
                 footer.Controls.Add(cancel);
             footer.Controls.Add(accept);
+            ButtonLayoutPolicy.Apply(footer, ReferenceEquals(accept, cancel) ? new[] { accept } : new[] { accept, cancel },
+                minimumWidth: 80, horizontalInset: 8, topInset: 8, bottomInset: 8);
             form.AcceptButton = accept;
             form.CancelButton = cancel;
             form.Controls.Add(footer);

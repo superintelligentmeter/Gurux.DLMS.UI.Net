@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$Binaries,
     [Parameter(Mandatory=$true)][string]$Output,
     [string]$Filter = '',
-    [ValidateRange(1,2)][int]$Workers = 2,
+    [ValidateSet('All','ObjectView','Dialog')][string]$Kind = 'All',
+    [ValidateRange(1,2)][int]$Workers = 1,
     [int]$TimeoutSeconds = 90
 )
 # superintelligentmeter contributors, 2026-10-30. GPL-2.0-only.
@@ -20,6 +21,7 @@ $queue=[Collections.Generic.Queue[object]]::new()
 foreach($state in @('representative','blank','structured')) {
     foreach($monitor in 0..($screens.Count-1)) {
         foreach($entry in $inventory.Screens) {
+            if($Kind -ne 'All' -and $entry.Kind -ne $Kind){continue}
             if($Filter -and !@($Filter.Split(',')|Where-Object{$entry.Type.Contains($_)}).Count){continue}
             if($entry.Kind -eq 'Dialog' -and $state -ne 'representative'){continue}
             if($state -eq 'structured' -and $entry.ShortName -notin @('GXDLMSDataView','GXDLMSPppSetupView','GXDLMSIp4SetupView')){continue}
@@ -53,6 +55,8 @@ while($queue.Count -or $active.Count) {
         $captureCount=0;$errorText=''
         try {$data=Get-Content $resultPath -Raw|ConvertFrom-Json;$captureCount=@($data.Captures).Count;if($job.Case.Kind -eq 'Dialog'){$errorText=$data.Error}else{if($data.Status -ne 'Passed'){$errorText=$data.Status+': '+($data.Errors -join ' | ')}}} catch {$errorText=$_.Exception.Message}
         if($timedOut){$errorText='Timeout: '+$errorText}
+        $failedAssertions=@($data.BehaviorChecks|Where-Object{$null -ne $_ -and !$_.Passed})
+        if($failedAssertions.Count){$errorText+=' Assertions failed: '+$failedAssertions.Count+' ('+($failedAssertions[0].Name)+')'}
         $record=[pscustomobject]@{Kind=$job.Case.Kind;Type=$job.Case.Type;State=$job.Case.State;Monitor=$job.Case.Monitor;Screen=$job.Case.Screen;Case=$job.Case.Case;Result=$resultPath;ExitCode=$job.Process.ExitCode;Captures=$captureCount;Error=$errorText;Seconds=[math]::Round(([DateTime]::UtcNow-$job.Started).TotalSeconds,2)}
         $completed.Add($record);$active.Remove($job)|Out-Null;$job.Process.Dispose()
         ConvertTo-Json -InputObject @($completed.ToArray()) -Depth 6|Set-Content (Join-Path $Output 'layout-cases.json')

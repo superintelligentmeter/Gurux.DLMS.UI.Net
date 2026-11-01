@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-30",
+  "scope": "Association Short Name General-tab alignment; Objects layout and existing method/access behavior preserved.",
+  "status": "Accepted",
+  "artifactRootName": "short-name-general-layout-20261030",
+  "installed": {
+    "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+    "directorSha256": "52D3C6E5255915539E751993A960B3EDA793BE52A3DE6A9BC791EF79A8796005",
+    "protocolSha256": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  },
+  "fix": [
+    "Use the actual absolute input rail of Logical Name across the native tab-frame inset, including the shared narrow-width budget.",
+    "Reuse the original Secret frame, ASCII checkbox, Update GXButton and Security Setup native combo host. Keep native events and Update method index 5.",
+    "Keep ASCII and Update beside Secret on wide screens; move the action group together beneath Secret on narrow screens. Use 8 logical pixels between accessories, 32-pixel inputs and current-DPI sizing.",
+    "Use managed parent offsets while the page is visible; defer bounded fitting after layout/font/DPI events. Correct an exact one-pixel column difference after monitor moves."
+  ],
+  "verification": {
+    "cases": 7,
+    "captures": 95.0,
+    "assertions": 837.0,
+    "failedAssertions": 0,
+    "errors": 0,
+    "physicalDpi": [
+      96,
+      120
+    ],
+    "states": [
+      "empty",
+      "populated security reference",
+      "long secret value"
+    ],
+    "viewports": [
+      "1100x760",
+      "900x650",
+      "620x560",
+      "restored"
+    ],
+    "monitorRoundtrip": "Physical 125% -> 100% -> 125%, with minimize/restore and maximize/restore on both displays.",
+    "builds": [
+      "Dashboards enabled: zero errors, 44 existing warnings.",
+      "Dashboards disabled: zero errors, 44 existing warnings."
+    ],
+    "visualReview": "Normal and narrow General plus Objects; both actual monitor scales."
+  },
+  "notes": [
+    "Scoped followup only. Earlier matrix rows keep their actual historical hashes.",
+    "No meter actions, preferences, saved meter files or dashboard library writes. Offline fixtures only. Existing test-host/native bitmap limitations still apply.",
+    "General retains original data/access callbacks. The pre-existing index-7 access callback versus index-5 Update method was not changed by this layout work.",
+    "Raw initial errors/check failures are retained: confirmation exposed hidden-tab native-coordinate fitting; visible-confirmation contained an incorrect right-edge assertion for intentionally stacked actions; final-confirmation exposed the one-pixel return-to-96-DPI shift. Accepted evidence is a separate run after fixes; none of those earlier reports were relabeled.",
+    "Existing fonts/colors and Gurux.DLMS 9.0.2609.2201 package are unchanged; installed UI hash matches all accepted cases. No commit or push performed."
+  ],
+  "cases": [
+    {
+      "state": "blank",
+      "physicalDpi": [
+        120
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 50,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-blank-monitor0/result.json"
+    },
+    {
+      "state": "blank",
+      "physicalDpi": [
+        96
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 50,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-blank-monitor1/result.json"
+    },
+    {
+      "state": "short-name-general-long",
+      "physicalDpi": [
+        120
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 114,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-short-name-general-long-monitor0/result.json"
+    },
+    {
+      "state": "short-name-general-long",
+      "physicalDpi": [
+        96
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 114,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-short-name-general-long-monitor1/result.json"
+    },
+    {
+      "state": "short-name-general-populated",
+      "physicalDpi": [
+        120
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 114,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-short-name-general-populated-monitor0/result.json"
+    },
+    {
+      "state": "short-name-general-populated",
+      "physicalDpi": [
+        96
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 12,
+      "assertions": 114,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-short-name-general-populated-monitor1/result.json"
+    },
+    {
+      "state": "short-name-general-roundtrip",
+      "physicalDpi": [
+        96,
+        120
+      ],
+      "uiSha256": "EF38EFB44CEBE216F67017507901E579865C091DAB1505EED73CFC0DEED7927E",
+      "captures": 23,
+      "assertions": 281,
+      "failedAssertions": 0,
+      "errors": 0,
+      "evidence": "accepted/GXDLMSAssociationShortNameView-short-name-general-roundtrip-monitor0/result.json"
+    }
+  ]
+}

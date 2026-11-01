@@ -1,4 +1,4 @@
-// superintelligentmeter contributors, 2026-10-30: shared property widths with flexible Association data tabs. GPL-2.0-only; original notices retained.
+﻿// superintelligentmeter contributors, 2026-10-30: shared property widths with flexible Association data tabs. GPL-2.0-only; original notices retained.
 // Modified 2026-10-30: constrain Association tabs to their available viewport. GPL-2.0-only.
 // superintelligentmeter, 2026-10-29: preserve live conformance feedback and keep password actions visible at narrow widths. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
@@ -209,7 +209,7 @@ namespace Gurux.DLMS.UI
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             list.Dock = DockStyle.Fill;
-            list.Margin = new Padding(0, 0, 0, 8);
+            list.Margin = Padding.Empty;
             list.BorderStyle = BorderStyle.FixedSingle;
             list.FullRowSelect = true;
             list.GridLines = true;
@@ -250,9 +250,9 @@ namespace Gurux.DLMS.UI
             footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             footer.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            var left = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false,
+            var left = new ActionButtonPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false,
                 Margin = Padding.Empty, Padding = Padding.Empty };
-            var right = new FlowLayoutPanel
+            var right = new ActionButtonPanel
             {
                 Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = Padding.Empty,
                 FlowDirection = FlowDirection.LeftToRight, WrapContents = false
@@ -276,6 +276,8 @@ namespace Gurux.DLMS.UI
                 SizeFooterButton(button);
                 right.Controls.Add(button);
             }
+            if (page == tabPage1) ButtonLayoutPolicy.Apply(left, new[] { EditBtn }, alignRight: false);
+            ButtonLayoutPolicy.Apply(right, buttons, wrap: false);
             footer.Controls.Add(left, 0, 0);
             footer.Controls.Add(right, 1, 0);
             layout.Controls.Add(footer, 0, 1);
@@ -362,7 +364,7 @@ namespace Gurux.DLMS.UI
             ModernPresentation.CompactRow(table, SecretLbl.Text, SecretTB, SecretAsciiCb);
             ModernPresentation.CompactRow(table, label1.Text, gxValueField1);
             ModernPresentation.Section(table, "Password actions");
-            var passwordActions = new FlowLayoutPanel
+            var passwordActions = new ActionButtonPanel
             {
                 Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty,
                 Padding = Padding.Empty, WrapContents = true
@@ -371,6 +373,10 @@ namespace Gurux.DLMS.UI
             ModernPresentation.CompactButton(UpdateHighPwBtn);
             passwordActions.Controls.Add(UpdatePwBtn);
             passwordActions.Controls.Add(UpdateHighPwBtn);
+            // These long captions need room beyond the native adapter's
+            // word-wrap threshold, including after monitor/font changes.
+            ButtonLayoutPolicy.Apply(passwordActions, new[] { UpdatePwBtn, UpdateHighPwBtn },
+                alignRight: false, minimumWidth: 200);
             // Let wrapping increase the row height instead of clipping the second action.
             AddFullWidthRow(table, passwordActions);
             ModernPresentation.Section(table, "Security");

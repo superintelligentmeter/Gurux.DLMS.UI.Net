@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-31",
+  "scope": "Security Setup Activate Security beside Policy, matching Update Key width/right edge. Pending Image Transfer/IPv6 fixes included.",
+  "artifactRootName": "security-activation-row-20261031",
+  "candidate": {
+    "ui": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+    "director": "BEA3E03FC11799CDD9C83AFC44BFB5B20440792734CF6E0FB94A52215B087F58",
+    "protocol": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  },
+  "usualExecutableUpdated": true,
+  "fix": "Reuse the original policy alternatives panel and Activate Security button in a bounded CompactActionRow. Retain the existing tall policy viewport and version-0 alternative. Collapse the former remote action row; MatchInlineWidths measures both actions together. Wide layouts align action right edges; narrow layouts stack with the same field rail. No model/action semantics changed.",
+  "verification": {
+    "cases": 5,
+    "captures": 101.0,
+    "assertions": 811.0,
+    "failures": 0,
+    "physicalDpi": [
+      96,
+      120
+    ],
+    "roundtrip": "Actual monitor move/minimize/maximize",
+    "builds": "Enabled and disabled builds: zero errors, 44 existing warnings each."
+  },
+  "notes": [
+    "Root reviewed normal/narrow renders. Checks cover both security versions, matching action widths/edges, 12-logical-pixel inline gap, complete policy list, description sizing and original action indices.",
+    "Latest candidate includes both pending Image Transfer right-edge and IPv6 gap changes; scoped guards pass. Earlier full focused evidence retains its actual hash.",
+    "Original fonts/colors/handlers and dlms.net package unchanged. Offline fixtures only; no activation/key methods or user settings/files were invoked. Existing native bitmap/test-host limitations apply.",
+    "Installed together through the method-action-edge followup. Exact older per-case hashes retained; latest related guards pass. No commit or push."
+  ],
+  "cases": [
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSImageTransferView",
+      "state": "blank",
+      "uiSha256": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 6,
+      "assertions": 92,
+      "failures": 0,
+      "evidence": "verified/GXDLMSImageTransferView-blank-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSIp6SetupView",
+      "state": "representative",
+      "uiSha256": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 24,
+      "assertions": 122,
+      "failures": 0,
+      "evidence": "verified/GXDLMSIp6SetupView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSSecuritySetupView",
+      "state": "representative",
+      "uiSha256": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 16,
+      "assertions": 122,
+      "failures": 0,
+      "evidence": "verified/GXDLMSSecuritySetupView-representative-m1/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSSecuritySetupView",
+      "state": "roundtrip",
+      "uiSha256": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+      "physicalDpi": [
+        96,
+        120
+      ],
+      "captures": 39,
+      "assertions": 365,
+      "failures": 0,
+      "evidence": "verified/GXDLMSSecuritySetupView-roundtrip-m0/result.json"
+    },
+    {
+      "view": "Gurux.DLMS.UI.GXDLMSSecuritySetupView",
+      "state": "version0",
+      "uiSha256": "63F919462AB2E5D395F0FBE866084A6A68761DE562D48FB34843924D039F7863",
+      "physicalDpi": [
+        96
+      ],
+      "captures": 16,
+      "assertions": 110,
+      "failures": 0,
+      "evidence": "verified/GXDLMSSecuritySetupView-version0-m1/result.json"
+    }
+  ],
+  "installed": {
+    "ui": "6D06C45B7EB07C1CF97ED4938F7AACDD796F048EDE6EEECB38B3915E7B9658B9",
+    "director": "B508EAA15E09B18FB25816498B4A39A401B58EC6C1D0490E345D17933966C931",
+    "protocol": "370841CFA9F843F3919528B2403E824778177ED716A2B60A413AD3E75DCF4343"
+  }
+}

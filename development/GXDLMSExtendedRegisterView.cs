@@ -85,10 +85,7 @@ namespace Gurux.DLMS.UI
                 ModernPresentation.CompactRow(table, "Unit", UnitTB);
                 ModernPresentation.CompactRow(table, "Status", StatusTB);
                 ModernPresentation.CompactRow(table, "Capture time", CaptureTimeTB);
-                ModernPresentation.CompactButton(ResetBtn);
-                var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
-                actions.Controls.Add(ResetBtn);
-                ModernPresentation.CompactRow(table, "Action", actions, height: 48);
+                ModernPresentation.CompactActions(table, "Action", ResetBtn);
                 Controls.Remove(groupBox1);
                 groupBox1.Dispose();
                 ModernPresentation.Apply(this);

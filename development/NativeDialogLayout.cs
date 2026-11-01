@@ -103,16 +103,9 @@ namespace Gurux.DLMS.UI
         }
         private static FlowLayoutPanel Footer(Control parent, params Button[] buttons)
         {
-            var footer = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = true, Margin = new Padding(0, S(parent, 10), 0, 0) };
-            foreach (var button in buttons.Reverse())
-            {
-                button.AutoSize = true; button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                button.Dock = DockStyle.None; button.Anchor = AnchorStyles.None;
-                button.MinimumSize = new Size(S(parent, 80), S(parent, 30));
-                button.Margin = new Padding(S(parent, 8), 0, 0, 0);
-                button.TabIndex = Array.IndexOf(buttons, button);
-                footer.Controls.Add(button);
-            }
+            var footer = new ActionButtonPanel { AutoSize = true, Dock = DockStyle.Fill };
+            ButtonLayoutPolicy.Apply(footer, buttons, minimumWidth: 80, height: 28,
+                horizontalInset: 0, topInset: 8, bottomInset: 0);
             return footer;
         }
         internal static void CertificateGeneration(Form form)

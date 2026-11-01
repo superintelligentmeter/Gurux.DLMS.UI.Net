@@ -2,6 +2,8 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWindowsForms>true</UseWindowsForms><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup><ProjectReference Include="../../development/Gurux.DLMS.UI.Net.csproj" /></ItemGroup>
   <ItemGroup>
+    <Compile Include="../SettingsWriteGuard.cs" Link="SettingsWriteGuard.cs" />
+    <Compile Include="../ButtonAuditMetrics.cs" Link="ButtonAuditMetrics.cs" />
     <Compile Include="../LayoutMetrics.cs" Link="LayoutMetrics.cs" />
     <PackageReference Include="Gurux.DLMS" Version="9.0.2609.2201" GeneratePathProperty="true" ExcludeAssets="compile;runtime" />
     <Reference Include="Gurux.DLMS"><HintPath>$(PkgGurux_DLMS)\lib\net48\Gurux.DLMS.dll</HintPath><Private>true</Private></Reference>

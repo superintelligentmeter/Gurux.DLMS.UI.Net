@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-30: align nested key groups with the common scalar rail. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: responsive native layout for the embedded ciphering editors. GPL-2.0-only; original Gurux notices remain in the owning forms.
 using System;
 using System.Drawing;
@@ -23,7 +24,9 @@ namespace Gurux.DLMS.UI.Ecdsa
             {
                 group.AutoSize = true;
                 group.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                group.Padding = new Padding(Scale(group, 8), Scale(group, 18), Scale(group, 8), Scale(group, 8));
+                // The parent and key groups share one scalar rail. Preserve the
+                // group instances for security-mode visibility and enabled states.
+                group.Padding = new Padding(0, Scale(group, 18), Scale(group, 8), Scale(group, 8));
             }
             var table = new TableLayoutPanel
             {
@@ -37,7 +40,8 @@ namespace Gurux.DLMS.UI.Ecdsa
             };
             table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            // Fixed action column: every input ends at the same right edge, with or without an ASCII box or button.
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Scale(parent, 112)));
             EditorLayoutPolicy.ConfigurePropertyTable(table);
             parent.Controls.Add(table);
             return table;
@@ -59,8 +63,7 @@ namespace Gurux.DLMS.UI.Ecdsa
             field.TabIndex = row * 3 + 1;
             if (string.IsNullOrWhiteSpace(field.AccessibleName)) field.AccessibleName = label.Text.TrimEnd(':');
             table.Controls.Add(field, 1, row);
-            if (action == null) table.SetColumnSpan(field, 2);
-            else
+            if (action != null)
             {
                 action.AutoSize = true;
                 action.Dock = DockStyle.None;
@@ -69,6 +72,37 @@ namespace Gurux.DLMS.UI.Ecdsa
                 action.TabIndex = row * 3 + 2;
                 table.Controls.Add(action, 2, row);
             }
+        }
+
+        /// <summary>
+        /// Keeps the action column of nested key groups (which sit inside a group box) ending where the
+        /// owner's does, so combo boxes and text boxes share one right edge.
+        /// </summary>
+        internal static void AlignActionColumn(TableLayoutPanel owner, params TableLayoutPanel[] nested)
+        {
+            bool adjusting = false;
+            void Adjust()
+            {
+                if (adjusting || owner.IsDisposed) return;
+                adjusting = true;
+                try
+                {
+                    int width = Scale(owner, 112);
+                    if ((int)owner.ColumnStyles[2].Width != width) owner.ColumnStyles[2].Width = width;
+                    foreach (var table in nested)
+                    {
+                        if (table.IsDisposed || table.Width <= 0 || owner.Width <= 0) continue;
+                        int inset = Math.Max(0, owner.Width - table.Width);
+                        int own = Math.Max(Scale(table, 84), width - inset);
+                        if ((int)table.ColumnStyles[2].Width != own) table.ColumnStyles[2].Width = own;
+                    }
+                }
+                finally { adjusting = false; }
+            }
+            owner.SizeChanged += (_, _) => Adjust();
+            owner.DpiChangedAfterParent += (_, _) => Adjust();
+            foreach (var table in nested) table.SizeChanged += (_, _) => Adjust();
+            Adjust();
         }
 
         internal static void Span(TableLayoutPanel table, Control control)
@@ -133,6 +167,29 @@ namespace Gurux.DLMS.UI.Ecdsa
             suite1.Visible = !useSuite0;
             host.ResumeLayout(true);
             host.Parent?.PerformLayout();
+        }
+
+        internal static void TrackScrollExtent(TabPage page, Control content)
+        {
+            // Docked AutoSize rows can grow after a scrollbar narrows their labels.
+            // Advertise the measured content extent, never a previously scaled height.
+            bool fitting = false;
+            void Fit()
+            {
+                if (fitting || page.IsDisposed || content.IsDisposed) return;
+                fitting = true;
+                try
+                {
+                    var minimum = new Size(0, content.Height + page.Padding.Vertical);
+                    if (page.AutoScrollMinSize != minimum) page.AutoScrollMinSize = minimum;
+                }
+                finally { fitting = false; }
+            }
+            content.SizeChanged += (_, _) => Fit();
+            content.Layout += (_, _) => Fit();
+            page.Layout += (_, _) => Fit();
+            page.DpiChangedAfterParent += (_, _) => Fit();
+            Fit();
         }
     }
 }

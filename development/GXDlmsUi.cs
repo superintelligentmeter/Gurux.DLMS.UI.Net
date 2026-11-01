@@ -285,7 +285,7 @@ namespace Gurux.DLMS.UI
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.Forms.MessageBox.Show(view as Form, ex.Message, "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    Gurux.DLMS.UI.ApplicationMessageBox.Show(view as Form, ex.Message, "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 }
                 return;
             }
@@ -319,7 +319,7 @@ namespace Gurux.DLMS.UI
                     }
                     catch (Exception ex)
                     {
-                        System.Windows.Forms.MessageBox.Show(view as Form, ex.Message, "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        Gurux.DLMS.UI.ApplicationMessageBox.Show(view as Form, ex.Message, "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                         return;
                     }
                     if (it == index)

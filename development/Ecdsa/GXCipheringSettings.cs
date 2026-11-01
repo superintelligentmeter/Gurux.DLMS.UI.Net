@@ -1,3 +1,4 @@
+// superintelligentmeter, 2026-10-30: share the adaptive caption rail across ciphering sections. GPL-2.0-only; original notices retained.
 // superintelligentmeter, 2026-10-29: resize ciphering controls as native rows and switch whole suite panels. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 using Gurux.DLMS.ASN;
@@ -265,6 +266,9 @@ namespace Gurux.DLMS.UI.Ecdsa
             var server = CipheringLayout.Surface(groupBox3);
             CipheringLayout.Row(server, label6, ServerSigningKeysCb, ServerSigningKeyInfoBtn);
             CipheringLayout.Row(server, label5, ServerAgreementKeysCb, ServerAgreementKeyInfoBtn);
+            EditorLayoutPolicy.ShareLabelColumn(client, common);
+            EditorLayoutPolicy.ShareLabelColumn(server, common);
+            CipheringLayout.AlignActionColumn(common, client, server);
             var suite1 = CipheringLayout.Surface(Cipheringv1);
             CipheringLayout.Span(suite1, groupBox2);
             CipheringLayout.Span(suite1, groupBox3);

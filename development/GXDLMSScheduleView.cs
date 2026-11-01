@@ -1,4 +1,4 @@
-// superintelligentmeter contributors, 2026-10-30: bound property rows while allowing data lists to use the workspace. GPL-2.0-only; original notices retained.
+// superintelligentmeter contributors, 2026-10-30: bound property rows and align native Schedule actions with the entries list. GPL-2.0-only; original notices retained.
 // Modified for the Intelmeter fork, 2026-10-16: .NET 10 migration, UI modernization and compatibility fixes. GPL-2.0-only; original notices retained.
 //
 // --------------------------------------------------------------------------
@@ -68,6 +68,7 @@ namespace Gurux.DLMS.UI
             int row = table.RowCount++;
             table.RowStyles.Add(new RowStyle(SizeType.Absolute, 300 * DeviceDpi / 96));
             EntriesView.Dock = DockStyle.Fill;
+            EntriesView.Margin = Padding.Empty;
             EntriesView.AccessibleName = ValueLbl.Text;
             EntriesView.TabIndex = row * 2;
             table.Controls.Add(EntriesView, 0, row);
@@ -75,12 +76,24 @@ namespace Gurux.DLMS.UI
             int[] widths = { 64, 72, 132, 76, 112, 124, 180, 132, 112, 112 };
             for (int pos = 0; pos != widths.Length; ++pos)
                 EntriesView.Columns[pos].Width = widths[pos] * DeviceDpi / 96;
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
-            foreach (var button in new[] { gxButton1, AddObjectBtn, RemoveObjectBtn })
+            var actions = new ActionButtonPanel
             {
+                Name = "ScheduleActions", Dock = DockStyle.Fill, AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = true,
+                FlowDirection = FlowDirection.RightToLeft, Margin = Padding.Empty,
+                BackColor = table.BackColor
+            };
+            var buttons = new[] { gxButton1, AddObjectBtn, RemoveObjectBtn };
+            for (int i = buttons.Length - 1; i >= 0; --i)
+            {
+                var button = buttons[i];
                 ModernPresentation.CompactButton(button);
+                button.AutoSize = false;
+                button.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                button.TabIndex = i;
                 actions.Controls.Add(button);
             }
+            ButtonLayoutPolicy.Apply(actions, buttons, minimumWidth: 128);
             row = table.RowCount++;
             table.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             actions.TabIndex = row * 2;

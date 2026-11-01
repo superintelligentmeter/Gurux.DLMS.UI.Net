@@ -96,8 +96,26 @@ for case in cases:
                     contains_tabs = any(x['Path'].startswith(m['Path'] + '/') and 'TabControl' in x['Type'] for x in metrics)
                     if not m.get('HasFlexibleContent') and not contains_tabs:
                         check(case, cap, m, 'property-section-width-cap', m['Width'] <= 800 * scale + 2, round(m['Width'] / scale, 2), '<=800 logical px')
-                    expected = min(144 * scale, max(100 * scale, m['Width'] / 3))
-                    check(case, cap, m, 'shared-label-column', abs(rail - expected) <= 2, round(rail / scale, 2), round(expected / scale, 2))
+                    # These source-declared ShareLabelColumn call sites follow an outer
+                    # owner at narrow widths; do not infer ownership merely from equal rails.
+                    rail_owner = m
+                    parent = lookup.get(m.get('ParentPath'), {})
+                    cipher_groups = {'GXCipheringSettings': {'groupBox2', 'groupBox3'}, 'GXDeviceCipheringSettings': {'groupBox1', 'groupBox2'}}
+                    if parent.get('Type') == 'GroupBox':
+                        if m.get('Name') == 'NativePropertyRows':
+                            outer = lookup.get(parent.get('ParentPath'), {})
+                            if outer.get('Name') == 'NativePropertyRows': rail_owner = outer
+                        elif parent.get('Name') in cipher_groups.get(short, set()):
+                            ancestor = parent
+                            while ancestor.get('ParentPath') in lookup:
+                                ancestor = lookup[ancestor['ParentPath']]
+                                owner_parent = lookup.get(ancestor.get('ParentPath'), {})
+                                if ancestor.get('Type') == 'TableLayoutPanel' and owner_parent.get('Name') == 'CipheringTab':
+                                    rail_owner = ancestor
+                                    break
+                    expected = min(144 * scale, max(100 * scale, rail_owner['Width'] / 3))
+                    check(case, cap, m, 'shared-label-column', abs(rail - expected) <= 2, round(rail / scale, 2),
+                          str(round(expected / scale, 2)) + (' from shared owner ' + rail_owner['Path'] if rail_owner is not m else ''))
     for (_, requested), observations in reach.items():
         cap, m = max(observations, key=lambda x: x[1]['VisibleWidth'] * x[1]['VisibleHeight'])
         reachable = any(x['VisibleWidth'] + 4 >= x['Width'] and x['VisibleHeight'] + 4 >= x['Height'] for _, x in observations)

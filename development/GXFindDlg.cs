@@ -93,7 +93,13 @@ namespace Gurux.DLMS.UI
             AnyTextRb.TabIndex = 1;
             if (showModes)
             {
-                ModernPresentation.CompactRow(table, "Search by", modes, height: 64);
+                ModernPresentation.CompactRow(table, "Search by:", modes, height: 60);
+                // Line the caption up with the first option instead of centring it between both.
+                if (table.GetControlFromPosition(0, table.RowCount - 1) is Label modeCaption)
+                {
+                    modeCaption.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+                    modeCaption.Padding = new Padding(0, (int)(6 * DeviceDpi / 96f), 0, 0);
+                }
             }
             else
             {
@@ -107,8 +113,13 @@ namespace Gurux.DLMS.UI
             FindBtn.TabIndex = 0;
             CancelBtn.TabIndex = 1;
             ClientSize = new System.Drawing.Size((int)(600 * DeviceDpi / 96f),
-                (int)((showModes ? 224 : 160) * DeviceDpi / 96f));
+                (int)((showModes ? 172 : 124) * DeviceDpi / 96f));
             ModernPresentation.Apply(this);
+            // Size to the content so nothing scrolls and no empty band is left above the buttons.
+            int contentWidth = ClientSize.Width - Padding.Horizontal;
+            int needed = Padding.Vertical + table.GetPreferredSize(new System.Drawing.Size(contentWidth, 0)).Height +
+                footer.GetPreferredSize(System.Drawing.Size.Empty).Height + (int)(8 * DeviceDpi / 96f);
+            ClientSize = new System.Drawing.Size(ClientSize.Width, needed);
             ActiveControl = FindTb;
             ResumeLayout(true);
         }

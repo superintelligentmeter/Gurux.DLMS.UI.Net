@@ -15,12 +15,12 @@ namespace Gurux.DLMS.UI
         // Existing bound controls, containers and event handlers remain the same instances.
         private static readonly HashSet<string> RemainingModels = new HashSet<string>((
             "GXDLMSAssociationShortName GXDLMSSapAssignment GXDLMSImageTransfer GXDLMSIECLocalPortSetup GXDLMSIECOpticalPortSetup " +
-            "GXDLMSRegisterMonitor GXDLMSActionSchedule GXDLMSHdlcSetup GXDLMSIecTwistedPairSetup " +
+            "GXDLMSRegisterMonitor GXDLMSHdlcSetup GXDLMSIecTwistedPairSetup " +
             "GXDLMSMBusSlavePortSetup GXDLMSUtilityTables GXDLMSModemConfiguration GXDLMSAutoAnswer " +
             "GXDLMSAutoConnect GXDLMSDataProtection GXDLMSPushSetup GXDLMSTcpUdpSetup GXDLMSIp4Setup " +
             "GXDLMSMacAddressSetup GXDLMSPppSetup GXDLMSGprsSetup GXDLMSGSMDiagnostic GXDLMSIp6Setup " +
             "GXDLMSSFSKPhyMacSetUp GXDLMSSFSKActiveInitiator GXDLMSSFSKMacSynchronizationTimeouts " +
-            "GXDLMSSFSKMacCounters GXDLMSCompactData GXDLMSSecuritySetup GXDLMSParameterMonitor " +
+            "GXDLMSSFSKMacCounters GXDLMSCompactData GXDLMSSecuritySetup " +
             "GXDLMSArbitrator GXDLMSDisconnectControl GXDLMSLimiter GXDLMSMBusClient GXDLMSWirelessModeQchannel " +
             "GXDLMSMBusMasterPortSetup GXDLMSMBusDiagnostic GXDLMSLlcSscsSetup GXDLMSPrimeNbOfdmPlcPhysicalLayerCounters " +
             "GXDLMSPrimeNbOfdmPlcMacSetup GXDLMSPrimeNbOfdmPlcMacFunctionalParameters GXDLMSPrimeNbOfdmPlcMacCounters " +
@@ -65,8 +65,15 @@ namespace Gurux.DLMS.UI
                 if (form.GetType().Name == "GXDLMSAutoConnectView")
                 {
                     var connect = Descendants(form).First(c => c.Name == "ConnectBtn");
-                    var remove = Descendants(form).First(c => c.Name == "TimeRemoveBtn");
-                    connect.Location = new Point(remove.Right + Scale(form, 8), remove.Top);
+                    var windows = Descendants(form).First(c => c.Name == "CallingWindowLV");
+                    // The remote Connect method is distinct from editing the
+                    // calling-window rows. Keep it above their contextual footer.
+                    connect.Location = new Point(0, windows.Top - Scale(form, 4));
+                    // Put the caption above a full-width list, on the same
+                    // rails as Destinations and both contextual action rows.
+                    var caption = Descendants(form).First(c => c.Name == "CallingWindowLbl");
+                    caption.Location = new Point(0, windows.Top);
+                    windows.Location = new Point(0, windows.Top + Scale(form, 24));
                 }
                 if (form.GetType().Name == "GXDLMSIecTwistedPairSetupView")
                 {
@@ -103,51 +110,172 @@ namespace Gurux.DLMS.UI
                     policy.Dock = DockStyle.Fill;
                     policy.BackColor = Color.White;
                 }
+                if (form is GXDLMSCompactDataView || form is GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView)
+                {
+                    var tabs = Descendants(form).OfType<TabControl>().First();
+                    var names = form is GXDLMSCompactDataView ? new[] { "ResetBtn", "CaptureBtn" } : new[] { "ResetBtn" };
+                    for (int i = 0; i < names.Length; ++i)
+                    {
+                        var button = Descendants(form).First(c => c.Name == names[i]);
+                        button.Location = new Point(Scale(form, i * 108), tabs.Top - Scale(form, 4));
+                    }
+                }
+                if (form is GXDLMSAssociationShortNameView)
+                {
+                    // Object actions belong to the Objects tab, on the same
+                    // content edge as its list rather than outside the tab frame.
+                    var objects = Descendants(form).First(c => c.Name == "ObjectsView");
+                    var actions = new[] { "ObjectAddBtn", "ObjectEditBtn", "ObjectRemoveBtn" }
+                        .Select(name => (Button)Descendants(form).First(c => c.Name == name)).ToArray();
+                    for (int i = 0; i < actions.Length; ++i)
+                    {
+                        objects.Parent.Controls.Add(actions[i]);
+                        actions[i].Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                        actions[i].Location = new Point(Scale(form, i * 108), objects.Bottom + Scale(form, 8));
+                    }
+                }
+                if (form is GXDLMSChargeView)
+                {
+                    var list = Descendants(form).First(c => c.Name == "PassiveChargePerUnits");
+                    // Preserve separate local list editing and remote method rows.
+                    foreach (var names in new[] { new[] { "AddBtn", "EditBtn", "RemoveBtn" },
+                        new[] { "gxButton4", "gxButton2" } })
+                    {
+                        int row = names[0] == "AddBtn" ? 0 : 1;
+                        for (int i = 0; i < names.Length; ++i)
+                        {
+                            var action = Descendants(form).First(c => c.Name == names[i]);
+                            action.Location = new Point(Scale(form, i * 108), list.Bottom + Scale(form, 8 + row * 40));
+                        }
+                    }
+                }
+                if (form is GXDLMSImageTransferView)
+                {
+                    foreach (var name in new[] { "ActivateImageBtn", "VerifyImageBtn", "UpdateImageBtn" })
+                    {
+                        var button = (Button)Descendants(form).First(c => c.Name == name);
+                        button.Text = button.Text.TrimEnd('.');
+                        // Use one GDI+ layout/paint path for these captions. The flat
+                        // GDI adapter can clip ascenders/descenders after DPI scaling
+                        // even when the outer button passes the text-size checks.
+                        button.UseCompatibleTextRendering = true;
+                    }
+                }
+                // These groups contain presentation-only sections of the same property
+                // form. A nested table adds another label inset; reuse one property
+                // grid while keeping every bound editor and event handler intact.
+                PromotePropertySections(form);
                 var allButtons = Descendants(form).OfType<Button>().ToArray();
-                int buttonWidth = Math.Max(Scale(form, 100), allButtons.Select(b =>
-                    TextRenderer.MeasureText(b.Text, BodyFont).Width + Scale(form, 24)).DefaultIfEmpty(0).Max());
                 foreach (Button button in allButtons)
                 {
                     CompactButton(button);
                     StyleButton(button, false);
                     button.Font = BodyFont;
                     button.AutoSize = false;
-                    button.Size = new Size(buttonWidth, Scale(form, 32));
+                    button.Size = ButtonLayoutPolicy.GetPreferredSize(button);
                     button.MinimumSize = button.MaximumSize = button.Size;
                 }
                 ArrangeObjectContainer(form);
-                if (form.GetType().Name == "GXDLMSPushSetupView")
+                if (form is GXDLMSAssociationShortNameView) AlignShortNameGeneral(form);
+                RepairReportedLayouts(form);
+                if (form is GXDLMSIp6SetupView)
                 {
-                    var push = Descendants(form).First(c => c.Name == "PushBtn");
-                    var logicalName = Descendants(form).First(c => c.Name == "LogicalNameTB");
-                    var rows = (TableLayoutPanel)logicalName.Parent;
-                    var position = rows.GetPositionFromControl(logicalName);
-                    var oldFooter = push.Parent;
-                    var header = new TableLayoutPanel
+                    var tabs = (TabControl)Descendants(form).First(c => c.Name == "AddressTab");
+                    var add = Descendants(form).First(c => c.Name == "AddAddressBtn");
+                    var footer = (FlowLayoutPanel)add.Parent;
+                    var rows = (TableLayoutPanel)footer.Parent;
+                    int oldRow = rows.GetRow(footer);
+                    rows.Controls.Remove(footer);
+                    rows.RowStyles[oldRow].SizeType = SizeType.Absolute;
+                    rows.RowStyles[oldRow].Height = 0;
+                    var footerRows = new Dictionary<TableLayoutPanel, int>();
+                    void ShowAddressFooter()
                     {
-                        Dock = DockStyle.Fill, Margin = Padding.Empty, BackColor = Color.White,
-                        ColumnCount = 2, RowCount = 1
-                    };
-                    header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                    header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, push.Width + Scale(form, 8)));
-                    header.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-                    header.Controls.Add(logicalName, 0, 0);
-                    push.Dock = DockStyle.Fill;
-                    header.Controls.Add(push, 1, 0);
-                    rows.Controls.Add(header, position.Column, position.Row);
-                    // The action no longer needs a footer below the expanding tabs.
-                    if (oldFooter.Parent is TableLayoutPanel footerRows)
-                    {
-                        int footerRow = footerRows.GetRow(oldFooter);
-                        footerRows.Controls.Remove(oldFooter);
-                        footerRows.RowStyles[footerRow].SizeType = SizeType.Absolute;
-                        footerRows.RowStyles[footerRow].Height = 0;
-                        oldFooter.Dispose();
+                        if (rows.IsDisposed || tabs.SelectedTab == null) return;
+                        var list = Descendants(tabs.SelectedTab).OfType<ListView>().First();
+                        var body = (TableLayoutPanel)list.Parent;
+                        if (footer.Parent is TableLayoutPanel previous && footerRows.TryGetValue(previous, out int previousRow))
+                        {
+                            previous.Controls.Remove(footer);
+                            previous.RowStyles[previousRow].SizeType = SizeType.Absolute;
+                            previous.RowStyles[previousRow].Height = 0;
+                        }
+                        if (!footerRows.TryGetValue(body, out int row))
+                        {
+                            row = body.RowCount++;
+                            body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                            footerRows.Add(body, row);
+                        }
+                        body.RowStyles[row].SizeType = SizeType.AutoSize;
+                        list.Margin = new Padding(list.Margin.Left, list.Margin.Top, list.Margin.Right, 0);
+                        footer.Margin = new Padding(0, 0, list.Margin.Right, 0);
+                        body.Controls.Add(footer, 0, row); body.SetColumnSpan(footer, body.ColumnCount);
+                        body.PerformLayout();
                     }
+                    tabs.SelectedIndexChanged += (_, _) => ShowAddressFooter();
+                    ShowAddressFooter();
                 }
             }
             finally { form.ResumeLayout(true); }
             return true;
+        }
+
+        private sealed class EditorSectionCaption : Label { }
+
+        private static void PromotePropertySections(Form form)
+        {
+            string[] names = form.GetType().Name switch
+            {
+                "GXDLMSGprsSetupView" => new[] { "groupBox2", "groupBox3" },
+                "GXDLMSGSMDiagnosticView" => new[] { "CellInfoCb" },
+                "GXDLMSIEC6205541AttributesView" => new[] { "groupBox3" },
+                "GXDLMSLimiterView" => new[] { "MonitoredGB", "groupBox4", "groupBox2", "groupBox3" },
+                "GXDLMSPushSetupView" => new[] { "GXSendDestinationAndMethodGB" },
+                "GXDLMSRegisterMonitorView" => new[] { "MonitoredValueGB" },
+                _ => Array.Empty<string>()
+            };
+            foreach (string name in names)
+            {
+                var group = Descendants(form).OfType<GroupBox>().Single(c => c.Name == name);
+                var parent = group.Parent;
+                var origin = group.Location;
+                var children = group.Controls.Cast<Control>().ToArray();
+                var locations = children.ToDictionary(c => c, c => c.Location);
+                var heading = new EditorSectionCaption
+                {
+                    Name = group.Name + "Heading", Text = group.Text,
+                    Location = origin, Size = new Size(group.Width, Scale(form, 32)),
+                    Font = BodyFont, ForeColor = Ink, TabStop = false
+                };
+                parent.SuspendLayout();
+                try
+                {
+                    foreach (var child in children)
+                    {
+                        parent.Controls.Add(child);
+                        child.Location = new Point(origin.X + locations[child].X, origin.Y + locations[child].Y);
+                    }
+                    parent.Controls.Add(heading);
+                    parent.Controls.Remove(group);
+                    group.Dispose();
+                }
+                finally { parent.ResumeLayout(false); }
+            }
+            if (form is GXDLMSGSMDiagnosticView)
+                // The original caption was copied from a listening-window editor.
+                Descendants(form).Single(c => c.Name == "AdjacentCellsLbl").Text = "Adjacent cells:";
+        }
+
+        private static void AlignTallCaption(Control caption, Control editor)
+        {
+            // Scalar fields retain centered captions; data surfaces start at the
+            // top of their row, including lists and multiline native text editors.
+            if (caption is Label label && (editor is ListView or DataGridView or TreeView or ListBox or
+                RichTextBox or EditorAlternativePanel || editor is TextBox text && text.Multiline))
+            {
+                label.TextAlign = ContentAlignment.TopLeft;
+                label.Padding = new Padding(0, Scale(label, 4), 0, 0);
+            }
         }
 
         private readonly struct EditorExtent
@@ -216,7 +344,13 @@ namespace Gurux.DLMS.UI
                     }
                     list.SizeChanged += (_, _) => FitColumns();
                     list.FontChanged += (_, _) => FitColumns();
-                    extents[child] = new EditorExtent(Scale(parent, 150), true);
+                    // Keep the image catalog compact; block status and the transfer
+                    // log use the remaining space. Longer catalogs scroll natively.
+                    bool compactImages = parent.FindForm() is GXDLMSImageTransferView && list.Name == "ImagesView";
+                    // IEC Twisted Pair needs room for both independent action rows.
+                    int listHeight = compactImages ? 80 : parent.FindForm() is GXDLMSIecTwistedPairSetupView &&
+                        list.Name is "PrimaryAddressesList" or "TabisList" ? 96 : 150;
+                    extents[child] = new EditorExtent(Scale(parent, listHeight), !compactImages);
                 }
                 else if (child is DataGridView grid)
                 {
@@ -249,16 +383,17 @@ namespace Gurux.DLMS.UI
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, labelWidth));
             table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             var pending = new HashSet<Control>(children);
-            int minimumHeight = 0;
+            int minimumHeight = 0, allocatedAbsoluteHeight = 0;
             bool stretches = false;
+            var actionRows = new List<FlowLayoutPanel>();
             foreach (Control first in children)
             {
                 if (!pending.Remove(first)) continue;
                 var row = new List<Control> { first };
-                if (first is not GroupBox && (first is not Panel || first is EditorAlternativePanel) && first is not TabControl)
+                if (first is not EditorSectionCaption && first is not GroupBox && (first is not Panel || first is EditorAlternativePanel) && first is not TabControl)
                 {
                     foreach (Control candidate in children)
-                        if (pending.Contains(candidate) && candidate is not GroupBox && (candidate is not Panel || candidate is EditorAlternativePanel) &&
+                        if (pending.Contains(candidate) && candidate is not EditorSectionCaption && candidate is not GroupBox && (candidate is not Panel || candidate is EditorAlternativePanel) &&
                             (candidate is Button) == (first is Button) &&
                             (Math.Abs(bounds[candidate].Top - bounds[first].Top) <= Scale(parent, 9) ||
                              (((candidate is Label && extents[first].Stretch) || (first is Label && extents[candidate].Stretch)) &&
@@ -280,7 +415,9 @@ namespace Gurux.DLMS.UI
                         table.RowStyles.Add(new RowStyle(pairStretch ? SizeType.Percent : SizeType.Absolute, pairStretch ? 100 : pairHeight));
                         Place(row[i], table, 0, pairRow);
                         Place(row[i + 1], table, 1, pairRow);
+                        AlignTallCaption(row[i], row[i + 1]);
                         minimumHeight += pairHeight;
+                        if (!pairStretch) allocatedAbsoluteHeight += pairHeight;
                         stretches |= pairStretch;
                     }
                     continue;
@@ -290,15 +427,18 @@ namespace Gurux.DLMS.UI
                 int height = row.Max(c => extents[c].Height);
                 table.RowStyles.Add(new RowStyle(stretch ? SizeType.Percent : SizeType.Absolute, stretch ? 100 : height));
                 minimumHeight += height;
+                if (!stretch && !row.All(c => c is Button)) allocatedAbsoluteHeight += height;
                 stretches |= stretch;
                 if (row.All(c => c is Button))
                 {
-                    var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true,
+                    var actions = new ActionButtonPanel { Dock = DockStyle.Fill, AutoSize = true,
                         WrapContents = true, FlowDirection = FlowDirection.RightToLeft, Margin = Padding.Empty,
                         BackColor = Color.White };
-                    foreach (Control button in row.AsEnumerable().Reverse())
-                    { button.Dock = DockStyle.None; button.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-                        button.Margin = new Padding(0, Scale(parent, 4), Scale(parent, 8), Scale(parent, 4)); actions.Controls.Add(button); }
+                    ButtonLayoutPolicy.Apply(actions, row.Cast<Button>().ToArray());
+                    // Match the data cell's explicit right inset, including on
+                    // tab pages. Peer gaps live inside the action group only.
+                    actions.Margin = new Padding(0, 0, Scale(parent, 8), 0);
+                    actionRows.Add(actions);
                     table.RowStyles[index].SizeType = SizeType.AutoSize;
                     table.Controls.Add(actions, 0, index); table.SetColumnSpan(actions, 2);
                 }
@@ -321,6 +461,7 @@ namespace Gurux.DLMS.UI
                 {
                     Place(row[0], table, 0, index);
                     Place(row[1], table, 1, index);
+                    AlignTallCaption(row[0], row[1]);
                 }
                 else if (row.Count == 1 && parent.FindForm() is GXDLMSG3Plc6LoWPanView && row[0] is CheckBox)
                     Place(row[0], table, 1, index);
@@ -356,7 +497,10 @@ namespace Gurux.DLMS.UI
             minimumHeight += parent.Padding.Vertical;
             if (parent is GroupBox) minimumHeight += parent.Font.Height + Scale(parent, 12);
             double logicalMinimum = minimumHeight * 96d / parent.DeviceDpi;
-            double logicalAbsoluteRows = table.RowStyles.Cast<RowStyle>().Where(r => r.SizeType == SizeType.Absolute).Sum(r => r.Height) * 96d / table.DeviceDpi;
+            // Capture the allocated baseline, not rows already resized by child parenting.
+            // Otherwise a nested group can grow while the outer table subtracts its new
+            // height from the old minimum, leaving the footer clipped.
+            double logicalAbsoluteRows = allocatedAbsoluteHeight * 96d / table.DeviceDpi;
             bool fittingSurface = false;
             void FitSurface()
             {
@@ -366,6 +510,11 @@ namespace Gurux.DLMS.UI
                 {
                     int absoluteRows = (int)Math.Round(table.RowStyles.Cast<RowStyle>().Where(r => r.SizeType == SizeType.Absolute).Sum(r => r.Height));
                     int required = (int)Math.Round((logicalMinimum - logicalAbsoluteRows) * parent.DeviceDpi / 96d) + absoluteRows;
+                    foreach (var actions in actionRows)
+                    {
+                        int width = Math.Max(1, table.ClientSize.Width - actions.Margin.Horizontal);
+                        required += Math.Max(0, actions.GetPreferredSize(new Size(width, 0)).Height - Scale(parent, 40));
+                    }
                     if (parent is Form || parent is TabPage)
                     {
                         int available = Math.Max(1, parent.ClientSize.Height - parent.Padding.Vertical);
@@ -393,6 +542,76 @@ namespace Gurux.DLMS.UI
             parent.ParentChanged += (_, _) => FitSurface();
             FitSurface();
             EditorLayoutPolicy.ConfigurePropertyTable(table);
+            foreach (var actions in actionRows)
+            {
+                if (parent.FindForm() is GXDLMSFunctionControlView)
+                {
+                    // Function actions sit in the middle of the group at any window width.
+                    actions.Dock = DockStyle.None;
+                    actions.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                    actions.AutoSize = true;
+                    if (actions is ActionButtonPanel actionPanel) actionPanel.AlignRowsRight = false;
+                    bool centering = false;
+                    void CenterActions()
+                    {
+                        if (centering || actions.IsDisposed || table.IsDisposed) return;
+                        // Centre the buttons themselves: the panel can keep a stale width after a DPI change.
+                        int content = actions.Controls.Cast<Control>().Where(c => c.Visible)
+                            .Select(c => c.Right + c.Margin.Right).DefaultIfEmpty(0).Max();
+                        int left = Math.Max(0, (table.ClientSize.Width - table.Padding.Horizontal - content) / 2);
+                        var margin = new Padding(left, actions.Margin.Top, 0, 0);
+                        if (actions.Margin == margin) return;
+                        centering = true;
+                        try { actions.Margin = margin; } finally { centering = false; }
+                    }
+                    table.Layout += (_, _) => CenterActions();
+                    table.DpiChangedAfterParent += (_, _) => CenterActions();
+                    actions.SizeChanged += (_, _) => CenterActions();
+                    actions.Layout += (_, _) => CenterActions();
+                    CenterActions();
+                    continue;
+                }
+                int row = table.GetRow(actions);
+                var peer = table.Controls.Cast<Control>().Where(c => table.GetRow(c) < row &&
+                    (c is ListView || c is DataGridView || c is TreeView || c is TabControl))
+                    .OrderByDescending(c => table.GetRow(c)).FirstOrDefault();
+
+                if (peer is null && parent.FindForm() is not GXDLMSCompactDataView &&
+                    parent.FindForm() is not GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView)
+                {
+                    var field = table.Controls.Cast<Control>().Where(c => table.GetRow(c) < row &&
+                        table.GetColumn(c) == 1 && (c is GXValueField || c is ModernFieldFrame || c is NativeComboHost || c is ComboBox))
+                        .OrderByDescending(c => table.GetRow(c)).FirstOrDefault();
+                    if (field != null)
+                    {
+                        bool aligning = false;
+                        void AlignScalarActions()
+                        {
+                            if (aligning || actions.IsDisposed || field.IsDisposed || table.IsDisposed) return;
+                            var margin = new Padding(0, 0, Math.Max(0, table.ClientSize.Width-field.Right), 0);
+                            if (actions.Margin == margin) return;
+                            aligning = true;
+                            try { actions.Margin = margin; } finally { aligning = false; }
+                        }
+                        table.Layout += (_, _) => AlignScalarActions();
+                        table.DpiChangedAfterParent += (_, _) => AlignScalarActions();
+                        field.SizeChanged += (_, _) => AlignScalarActions();
+                        AlignScalarActions();
+                    }
+                }
+                if (peer is not null)
+                {
+                    actions.Margin = new Padding(0, 0, peer.Margin.Right, 0);
+
+                    // The action group's four-pixel top inset is the complete
+                    // list-to-button gap; do not retain another data-cell inset.
+                    int peerRow = table.GetRow(peer);
+                    bool followsData = table.Controls.Cast<Control>().Where(c => table.GetRow(c) > peerRow && table.GetRow(c) < row)
+                        .All(c => c is FlowLayoutPanel);
+                    if (followsData)
+                        peer.Margin = new Padding(peer.Margin.Left, peer.Margin.Top, peer.Margin.Right, 0);
+                }
+            }
             foreach (var adaptive in table.Controls.OfType<GXValueField>())
             {
                 int row = table.GetRow(adaptive);
@@ -401,15 +620,27 @@ namespace Gurux.DLMS.UI
                     ConfigureValueRow(table, row, caption, adaptive,
                         (int)Math.Round(table.RowStyles[row].Height * 96d / table.DeviceDpi));
             }
+            SetPropertyTabOrder(table);
             parent.PerformLayout();
             return new EditorExtent(minimumHeight + Scale(parent, 8), stretches);
+        }
+
+        private static void SetPropertyTabOrder(TableLayoutPanel table)
+        {
+            // Promoted sections previously had independent tab indices. Follow
+            // the final reading order, including layout-only native editor hosts.
+            foreach (Control cell in table.Controls)
+            {
+                cell.TabIndex = table.GetRow(cell) * table.ColumnCount + table.GetColumn(cell);
+                if (cell is TableLayoutPanel inline) SetPropertyTabOrder(inline);
+            }
         }
 
         private static Control Place(Control control, TableLayoutPanel table, int column, int row)
         {
             control.Dock = DockStyle.Fill;
             control.Margin = new Padding(0, Scale(table, 4), Scale(table, 8), Scale(table, 4));
-            if (control is Label label) { label.AutoSize = false; label.TextAlign = ContentAlignment.MiddleLeft; label.ForeColor = Muted; }
+            if (control is Label label) { label.AutoSize = false; label.TextAlign = ContentAlignment.MiddleLeft; label.ForeColor = label is EditorSectionCaption ? Ink : Muted; }
             if (control is TextBox text && !text.Multiline)
             {
                 text.BorderStyle = BorderStyle.None;
@@ -438,7 +669,196 @@ namespace Gurux.DLMS.UI
                 control = frame;
             }
             table.Controls.Add(control, column, row);
+            if (control is Button button)
+            {
+                ButtonLayoutPolicy.ApplyToButton(button);
+                void FitActionColumn()
+                {
+                    if (table.IsDisposed || column >= table.ColumnStyles.Count) return;
+                    var style = table.ColumnStyles[column];
+                    if (style.SizeType != SizeType.Absolute) return;
+                    int width = button.Width + button.Margin.Horizontal;
+                    if (Math.Abs(style.Width - width) > 1) style.Width = width;
+                }
+                button.SizeChanged += (_, _) => FitActionColumn();
+                FitActionColumn();
+            }
             return control;
+        }
+
+        private static void RepairReportedLayouts(Form form)
+        {
+            Control Named(string name) => Descendants(form).Single(c => c.Name == name);
+            if (form is GXDLMSImageTransferView)
+            {
+                // Full-span rows do not pass through the captioned-field policy.
+                // Remove the leftover designer inset so the log shares the data edge.
+                var log = Named("DescriptionList");
+                log.Margin = new Padding(log.Margin.Left, log.Margin.Top, 0, log.Margin.Bottom);
+            }
+            void Inline(Control field, Button action, TableLayoutPanel table, int row, int logicalHeight = 40)
+            {
+                field.Parent.Controls.Remove(field);
+                action.Parent.Controls.Remove(action);
+                ButtonLayoutPolicy.ApplyToButton(action);
+                var line = new CompactActionRow(table, row, field, action, logicalHeight)
+                { MaximumSize = new Size(Scale(table, 640), 0), TabIndex = field.TabIndex };
+                table.Controls.Add(line, 1, row);
+                table.SetColumnSpan(line, table.ColumnCount - 1);
+            }
+            if (form is GXDLMSPushSetupView)
+            {
+                var field = (GXValueField)Named("LogicalNameTB");
+                var table = (TableLayoutPanel)field.Parent;
+                var push = (Button)Named("PushBtn");
+                var old = push.Parent;
+                int obsolete = table.GetRow(old);
+                Inline(field, push, table, table.GetRow(field));
+                if (old.Controls.Count == 0 && obsolete >= 0)
+                {
+                    table.Controls.Remove(old); old.Dispose();
+                    table.RowStyles[obsolete].SizeType = SizeType.Absolute;
+                    table.RowStyles[obsolete].Height = 0;
+                }
+            }
+            if (form is GXDLMSSecuritySetupView)
+            {
+                var suite = (GXValueField)Named("SuiteTB");
+                var table = (TableLayoutPanel)suite.Parent;
+                var update = (Button)Named("UpdateKeyBtn");
+                var old = update.Parent;
+                int obsolete = table.GetRow(old);
+                Inline(suite, update, table, table.GetRow(suite));
+                if (old.Controls.Count == 0 && obsolete >= 0)
+                {
+                    table.Controls.Remove(old); old.Dispose();
+                    table.RowStyles[obsolete].SizeType = SizeType.Absolute;
+                    table.RowStyles[obsolete].Height = 0;
+                }
+                var policy = Named("SecurityPolicyTB").Parent;
+                var activate = (Button)Named("ActivateSecurityBtn");
+                var oldActivation = activate.Parent;
+                int activationRow = table.GetRow(oldActivation);
+                Inline(policy, activate, table, table.GetRow(policy), 140);
+                if (oldActivation.Controls.Count == 0 && activationRow >= 0)
+                {
+                    table.Controls.Remove(oldActivation); oldActivation.Dispose();
+                    table.RowStyles[activationRow].SizeType = SizeType.Absolute;
+                    table.RowStyles[activationRow].Height = 0;
+                }
+                ButtonLayoutPolicy.MatchInlineWidths(update, activate);
+                var text = (TextBox)Named("SystemTitleDescriptionTb");
+                int row = table.GetRow(text);
+                table.Controls.Remove(text);
+                text.BorderStyle = BorderStyle.None;
+                text.BackColor = Color.FromArgb(245, 247, 251);
+                text.ScrollBars = ScrollBars.Vertical;
+                var frame = new ModernFieldFrame(text, text.BackColor)
+                { Name = "SystemTitleDescriptionField", Dock = DockStyle.Fill,
+                  Margin = new Padding(0, Scale(table, 4), 0, Scale(table, 4)),
+                  MaximumSize = new Size(Scale(table, 640), 0),
+                  Padding = new Padding(Scale(table, 8)) };
+                text.Dock = DockStyle.Fill; text.Margin = Padding.Empty;
+                table.Controls.Add(frame, 1, row);
+                table.RowStyles[row].SizeType = SizeType.Absolute;
+                void FitDescription()
+                {
+                    int height = text.Font.Height * 5 + frame.Padding.Vertical + frame.Margin.Vertical;
+                    if (table.RowStyles[row].Height != height) table.RowStyles[row].Height = height;
+                }
+                text.FontChanged += (_, _) => FitDescription();
+                frame.DpiChangedAfterParent += (_, _) => FitDescription();
+                FitDescription();
+                table.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); table.RowCount++;
+            }
+
+            if (form is GXDLMSPrimeNbOfdmPlcMacNetworkAdministrationDataView)
+            {
+                var footer = (ActionButtonPanel)Named("ResetBtn").Parent;
+                var rows = (TableLayoutPanel)footer.Parent;
+                var tabs = (TabControl)Named("Tabs");
+                bool fitting = false, pending = false;
+                void QueueLayout()
+                {
+                    if (pending || rows.IsDisposed || !rows.IsHandleCreated) return;
+                    pending = true;
+                    rows.BeginInvoke((Action)(() =>
+                    {
+                        pending = false;
+                        if (!rows.IsDisposed) rows.PerformLayout();
+                    }));
+                }
+                void FitReset()
+                {
+                    if (fitting || rows.IsDisposed || tabs.SelectedTab == null) return;
+                    var list = Descendants(tabs.SelectedTab).OfType<ListView>().First();
+                    int right = list.Right;
+                    Control owner = list.Parent;
+                    while (owner != null && owner != rows) { right += owner.Left; owner = owner.Parent; }
+                    if (owner != rows) return;
+                    var margin = new Padding(0, 0, Math.Max(0, rows.ClientSize.Width-right), 0);
+                    if (footer.Margin == margin) return;
+                    fitting = true;
+                    try { footer.Margin = margin; QueueLayout(); } finally { fitting = false; }
+                }
+                rows.Layout += (_, _) => FitReset();
+                rows.HandleCreated += (_, _) => QueueLayout();
+                tabs.SelectedIndexChanged += (_, _) => FitReset();
+                foreach (var list in Descendants(tabs).OfType<ListView>())
+                {
+                    list.SizeChanged += (_, _) => FitReset();
+                    list.DpiChangedAfterParent += (_, _) => FitReset();
+                }
+                FitReset();
+            }
+            if (form is GXDLMSCompactDataView)
+            {
+                var upper = (ActionButtonPanel)Named("CaptureBtn").Parent;
+                var rows = (TableLayoutPanel)upper.Parent;
+                var tabs = Descendants(form).OfType<TabControl>().First();
+                bool fitting = false;
+                void Fit()
+                {
+                    if (fitting || upper.IsDisposed || tabs.SelectedTab == null) return;
+                    fitting = true;
+                    try
+                    {
+                        var description = Named("TemplateDescriptionTb").Parent;
+                        int descriptionRow = rows.GetRow(description);
+                        var maximum = new Size(description.MaximumSize.Width, Scale(rows, 32));
+                        if (description.MaximumSize != maximum) description.MaximumSize = maximum;
+                        if (descriptionRow >= 0 && rows.RowStyles[descriptionRow].Height != Scale(rows, 40))
+                            rows.RowStyles[descriptionRow].Height = Scale(rows, 40);
+                        // Use the tab viewport, including its native frame and content
+                        // insets. Hidden child bounds can be stale after a DPI move.
+                        var list = Named("CaptureObjectsLv");
+                        var page = tabs.TabPages.Cast<TabPage>().Single(p => Descendants(p).Contains(list));
+                        // WinForms TabControl has a four-device-pixel native frame.
+                        // Derive the remaining inset from the current content margins,
+                        // rather than its cached DisplayRectangle after a DPI move.
+                        int inset = tabs.Margin.Right + page.Padding.Right + list.Margin.Right + 4;
+                        var remove = Named("ColumnRemoveBtn");
+                        if (remove.Visible)
+                        {
+                            int right = remove.Right;
+                            Control owner = remove.Parent;
+                            while (owner != null && owner != rows) { right += owner.Left; owner = owner.Parent; }
+                            if (owner == rows) inset = Math.Max(0, rows.ClientSize.Width - right);
+                        }
+                        // Reset and Capture always start where the fields start, whatever the window width,
+                        // instead of moving between the right edge and the left after a re-layout.
+                        if (upper.Dock != DockStyle.None) upper.Dock = DockStyle.None;
+                        upper.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                        upper.AutoSize = true;
+                        var widths = rows.GetColumnWidths();
+                        var margin = new Padding(widths.Length > 0 ? widths[0] : 0, 0, 0, 0);
+                        if (upper.Margin != margin) upper.Margin = margin;
+                    }
+                    finally { fitting = false; }
+                }
+                rows.Layout += (_, _) => Fit(); tabs.SelectedIndexChanged += (_, _) => Fit();
+                tabs.DpiChangedAfterParent += (_, _) => Fit(); Fit();
+            }
         }
     }
 }

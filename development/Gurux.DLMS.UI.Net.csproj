@@ -16,8 +16,8 @@
     <EnableDefaultItems>false</EnableDefaultItems>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
-  <ItemGroup><Compile Include="ApplicationTypography.cs" /><Compile Include="EditorLayoutPolicy.cs" /><Compile Include="NativePropertyDialog.cs" /></ItemGroup>
-  <ItemGroup><Compile Include="ModernPresentation.ObjectEditors.cs" /><Compile Include="ModernPresentation.NativeCombo.cs" /><Compile Include="GXObjectReferenceView.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="ApplicationTypography.cs" /><Compile Include="EditorLayoutPolicy.cs" /><Compile Include="ButtonLayoutPolicy.cs" /><Compile Include="NativePropertyDialog.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="ModernPresentation.ObjectEditors.cs" /><Compile Include="ModernPresentation.AssociationShortName.cs" /><Compile Include="ModernPresentation.NativeCombo.cs" /><Compile Include="ModernPresentation.NativeInputs.cs" /><Compile Include="ModernPresentation.PropertyLists.cs" /><Compile Include="GXObjectReferenceView.cs" /></ItemGroup>
   <ItemGroup>
     <Compile Include="Custom\GXDLMSUnixTimeView.cs">
       <SubType>Form</SubType>
@@ -31,6 +31,7 @@
     <Compile Include="Ecdsa\GXDeviceCipheringSettings.Designer.cs">
       <DependentUpon>GXDeviceCipheringSettings.cs</DependentUpon>
     </Compile>
+    <Compile Include="Ecdsa\GXDeviceCipheringSettings.Layout.cs" />
     <Compile Include="Ecdsa\IGXUpdater.cs" />
     <Compile Include="GXActionArgs.cs" />
     <Compile Include="GXButton.cs">
@@ -1106,4 +1107,6 @@
     <Content Include="..\RELEASE-COMPLIANCE.txt" Link="legal-ui\RELEASE-COMPLIANCE.txt" Pack="true" PackagePath="RELEASE-COMPLIANCE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\licenses\**\*" Link="legal-ui\licenses\%(RecursiveDir)%(Filename)%(Extension)" Pack="true" PackagePath="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup><Using Include="Gurux.DLMS.UI.ApplicationMessageBox" Alias="MessageBox" /></ItemGroup>
+  <ItemGroup><Compile Include="ApplicationMessageBox.cs" /></ItemGroup>
 </Project>

@@ -88,19 +88,7 @@ namespace Gurux.DLMS.UI
                 ModernPresentation.CompactRow(table, "Period", PeriodTB);
                 ModernPresentation.CompactRow(table, "Number of periods", NOPeriodTB);
 
-                ModernPresentation.CompactButton(NextPeriodBtn);
-                ModernPresentation.CompactButton(ResetBtn);
-                var actions = new FlowLayoutPanel
-                {
-                    Dock = DockStyle.Fill,
-                    AutoSize = true,
-                    Margin = Padding.Empty,
-                    Padding = Padding.Empty,
-                    WrapContents = true
-                };
-                actions.Controls.Add(NextPeriodBtn);
-                actions.Controls.Add(ResetBtn);
-                ModernPresentation.CompactRow(table, "Actions", actions, height: 48);
+                ModernPresentation.CompactActions(table, "Actions", NextPeriodBtn, ResetBtn);
 
                 Controls.Remove(groupBox1);
                 groupBox1.Dispose();

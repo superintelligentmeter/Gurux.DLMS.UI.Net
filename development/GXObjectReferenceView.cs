@@ -17,6 +17,7 @@ namespace Gurux.DLMS.UI
         private readonly TextBox details;
         private bool hasReference;
         private bool arranging;
+        private bool settlePending;
         private int preferredHeight;
         internal event EventHandler ContentSizeChanged;
 
@@ -47,7 +48,10 @@ namespace Gurux.DLMS.UI
         {
             Name = name, AccessibleName = accessibleName, ReadOnly = true,
             Multiline = true, WordWrap = true, ScrollBars = ScrollBars.None,
-            BorderStyle = BorderStyle.None, AutoSize = false, TabStop = true
+            BorderStyle = BorderStyle.None, AutoSize = false, TabStop = true,
+            // Width belongs to the viewport. DefaultLayout must not advertise
+            // stale pre-resize textbox widths as a horizontal scroll extent.
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
 
         internal void UpdateReference(GXDLMSProfileGeneric profile)
@@ -83,23 +87,59 @@ namespace Gurux.DLMS.UI
             if (identity == null) return base.GetPreferredSize(proposedSize);
             int width = proposedSize.Width > 0 ? proposedSize.Width : Math.Max(1, ClientSize.Width);
             int innerWidth = Math.Max(1, width - Pixels(16));
-            int height = TextHeight(identity, innerWidth) + Pixels(12);
+            int height = TextHeight(identity, innerWidth) + Pixels(6) * 2;
             if (hasReference) height += Pixels(4) + TextHeight(details, innerWidth);
             return new Size(width, Math.Max(Pixels(32), height));
         }
 
         protected override void OnLayout(LayoutEventArgs e)
         {
-            base.OnLayout(e);
-            if (identity == null || arranging) return;
+            if (identity == null) { base.OnLayout(e); return; }
+            if (arranging || IsDisposed) return;
             arranging = true;
             try
             {
-                int width = Math.Max(1, ClientSize.Width - Pixels(16));
-                int height = TextHeight(identity, width);
-                identity.Bounds = new Rectangle(Pixels(8), Pixels(6), width, height);
-                details.Bounds = new Rectangle(Pixels(8), identity.Bottom + Pixels(4), width, TextHeight(details, width));
-                int nextHeight = GetPreferredSize(new Size(ClientSize.Width, 0)).Height;
+                // Minimized hosts have no usable viewport. Preserve the last
+                // measured extent until the native restore supplies real bounds.
+                if (Width <= Pixels(16) || Height <= 0 ||
+                    (TopLevelControl as Form)?.WindowState == FormWindowState.Minimized)
+                {
+                    base.OnLayout(e);
+                    return;
+                }
+                int previousClientWidth = ClientSize.Width;
+                // Decide from the full viewport, not a scrollbar retained from
+                // the previous reference. Stage new bounds before native layout
+                // scans them, so long-to-short refresh can remove that scrollbar.
+                bool needsVertical = AutoScroll && GetPreferredSize(new Size(Math.Max(1, Width), 0)).Height > Height;
+                int scrollbarWidth = Math.Max(0, Width - ClientSize.Width);
+                if (scrollbarWidth == 0) scrollbarWidth = SystemInformation.VerticalScrollBarWidth;
+                int width = Math.Max(1, Width - (needsVertical ? scrollbarWidth : 0) - Pixels(16));
+                int identityHeight = TextHeight(identity, width);
+                int detailsHeight = TextHeight(details, width);
+                int nextHeight = Math.Max(Pixels(32), Pixels(6) * 2 + identityHeight +
+                    (hasReference ? Pixels(4) + detailsHeight : 0));
+                var offset = AutoScroll ? AutoScrollPosition : Point.Empty;
+                identity.Bounds = new Rectangle(Pixels(8) + offset.X, Pixels(6) + offset.Y, width, identityHeight);
+                details.Bounds = new Rectangle(Pixels(8) + offset.X, identity.Bottom + Pixels(4), width, detailsHeight);
+                var extent = AutoScroll ? new Size(0, nextHeight) : Size.Empty;
+                if (AutoScrollMinSize != extent) AutoScrollMinSize = extent;
+
+                // Native anchoring may resize children once when a bar appears or
+                // disappears. A single coalesced pass uses the resulting viewport.
+                base.OnLayout(e);
+                if ((previousClientWidth != ClientSize.Width || identity.Width != width || details.Width != width) &&
+                    !settlePending && IsHandleCreated)
+                {
+                    settlePending = true;
+                    BeginInvoke((Action)(() =>
+                    {
+                        // Keep the guard set through the settle pass: native
+                        // minimum textbox bounds must not post an endless retry.
+                        try { if (!IsDisposed) PerformLayout(); }
+                        finally { settlePending = false; }
+                    }));
+                }
                 if (preferredHeight != nextHeight)
                 {
                     preferredHeight = nextHeight;
