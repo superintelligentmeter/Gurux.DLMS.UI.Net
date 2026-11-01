@@ -23,6 +23,5 @@
         <file src="..\LICENSE" target="" />
         <file src="..\THIRD-PARTY-NOTICES.txt" target="" />
         <file src="..\licenses\**\*" target="licenses" />
-        <file src="..\RELEASE-COMPLIANCE.txt" target="" />
      </files>
 </package>

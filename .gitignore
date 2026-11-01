@@ -258,3 +258,6 @@ paket-files/
 
 # Local migration conversation notes must not be published.
 /[Mm][Ii][Gg][Rr][Aa][Tt][Ii][Oo][Nn]-[Cc][Oo][Nn][Tt][Ee][Xx][Tt].[Tt][Xx][Tt]
+
+# Internal release checklist stays local.
+/RELEASE-COMPLIANCE.txt

@@ -4,7 +4,7 @@ An unofficial community fork of [Gurux.DLMS.UI.Net](https://github.com/Gurux/Gur
 
 This is **not an official Gurux release** and does not imply Gurux endorsement. Original Gurux UI components and the DLMS/COSEM libraries are developed by Gurux Ltd; their copyright, attribution and license notices remain applicable.
 
-License: **GPL-2.0-only**. The fork's contributions are distributed under the same license; original Gurux and third-party notices remain applicable. See [LICENSE](LICENSE), [MODIFICATIONS.txt](MODIFICATIONS.txt), [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), and [RELEASE-COMPLIANCE.txt](RELEASE-COMPLIANCE.txt).
+License: **GPL-2.0-only**. The fork's contributions are distributed under the same license; original Gurux and third-party notices remain applicable. See [LICENSE](LICENSE), [MODIFICATIONS.txt](MODIFICATIONS.txt), [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
 
 ## Companion application preview
 
@@ -22,7 +22,7 @@ git clone https://github.com/superintelligentmeter/Gurux.DLMS.UI.Net.git
 dotnet build GXDLMSDirector/Development/GXDLMSDirector46.csproj -c Release -t:Rebuild
 ```
 
-Keep the directory names `GXDLMSDirector` and `Gurux.DLMS.UI.Net`; Director references this project. See the [Director dashboard guide](https://github.com/superintelligentmeter/GXDLMSDirector/blob/master/DASHBOARDS.txt) for dashboard usage, autosave and optional feature switches.
+Keep the directory names `GXDLMSDirector` and `Gurux.DLMS.UI.Net`; Director references this project. See the [Director dashboard guide](https://github.com/superintelligentmeter/GXDLMSDirector#use-dashboards) for dashboard usage, autosave and optional feature switches.
 
 The protocol library remains the official Gurux.DLMS 9.0.2609.2201 NuGet package. This GPL dependency is not exempt from redistribution obligations merely because it is unmodified.
 
@@ -35,7 +35,7 @@ Gurux provides the original DLMS/COSEM components and object-view framework. The
 - [Gurux website](https://www.gurux.fi/) and [Gurux.DLMS documentation](https://www.gurux.fi/index.php?q=Gurux.DLMS)
 - [Gurux community updates](https://twitter.com/guruxorg)
 
-Preserve the original Gurux and third-party notices. See [MODIFICATIONS.txt](MODIFICATIONS.txt) for fork changes and [RELEASE-COMPLIANCE.txt](RELEASE-COMPLIANCE.txt) before distributing binaries, including unchanged GPL dependency DLLs.
+Preserve the original Gurux and third-party notices. See [MODIFICATIONS.txt](MODIFICATIONS.txt) for fork changes. Binary distributions must provide complete corresponding source for the exact versions of both forks and covered dependencies, including unchanged GPL dependency DLLs, with build instructions and the applicable license notices.
 
 ## Original Gurux UI integration example
 
