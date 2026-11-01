@@ -261,3 +261,9 @@ paket-files/
 
 # Internal release checklist stays local.
 /RELEASE-COMPLIANCE.txt
+
+# Local editor settings, internal documentation, and test harnesses.
+/.cursor/
+/docs/
+/test/
+/tests/
