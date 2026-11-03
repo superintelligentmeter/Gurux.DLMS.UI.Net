@@ -84,11 +84,89 @@ namespace Gurux.DLMS.UI
             }
         }
 
+        /// <summary>
+        /// Draw the marker of one editor inside its right end. ErrorProvider.Clear() forgets these per-control
+        /// settings, so a caller that is about to mark a control calls this first (see <see cref="PrepareErrorMarker"/>).
+        /// </summary>
+        private static void PlaceErrorMarker(ErrorProvider provider, Control c)
+        {
+            int icon = Scale(c, 16), inset = Scale(c, 6), arrow = SystemInformation.VerticalScrollBarWidth;
+            bool dropDown = c is ComboBox || c is NumericUpDown || c is DateTimePicker ||
+                c is GXValueField vf && vf.Type == Gurux.DLMS.Enums.ValueFieldType.CompoBox;
+            int padding = -(icon + inset + (dropDown ? arrow : 0));
+            if (provider.GetIconPadding(c) != padding) provider.SetIconPadding(c, padding);
+            if (provider.GetIconAlignment(c) != ErrorIconAlignment.MiddleRight) provider.SetIconAlignment(c, ErrorIconAlignment.MiddleRight);
+        }
+
+        /// <summary>Call before <c>ErrorProvider.SetError</c> on an editor so its marker is drawn inside the field.</summary>
+        public static void PrepareErrorMarker(IGXDLMSView view, Control c)
+        {
+            if (view?.ErrorProvider != null && c != null) PlaceErrorMarker(view.ErrorProvider, c);
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Form, object> MarkerHooks = new();
+
+        /// <summary>
+        /// A view marks edited values with its ErrorProvider. The provider draws the marker in the control's
+        /// parent just to the right of the control, where the framed fields, combo boxes and spin boxes of the
+        /// modern layout hide it, cut it off or overlap the neighbouring column. Draw it inside the right end
+        /// of the editor instead (left of a drop-down arrow or spin buttons), where nothing clips it.
+        /// </summary>
+        private static void ConfigureErrorMarkers(Form form)
+        {
+            if (form is not IGXDLMSView view || MarkerHooks.TryGetValue(form, out _)) return;
+            MarkerHooks.Add(form, new object());
+            void Configure()
+            {
+                var provider = view.ErrorProvider;
+                if (provider == null || form.IsDisposed) return;
+                void Visit(Control parent)
+                {
+                    foreach (Control c in parent.Controls)
+                    {
+                        PlaceErrorMarker(provider, c);
+                        Visit(c);
+                    }
+                }
+                Visit(form);
+            }
+            // ErrorProvider.Clear() also forgets the marker placement, and a view marks its own editors (SetError in its
+            // change handlers) without going through here, so such a marker is drawn at the default spot, clipped away
+            // by the editor host, until the next layout re-applies the placement. Re-apply it whenever the UI goes idle.
+            long lastCheck = 0;
+            EventHandler keepPlacement = null;
+            keepPlacement = (_, _) =>
+            {
+                if (form.IsDisposed) { Application.Idle -= keepPlacement; return; }
+                long now = Environment.TickCount64;
+                if (!form.Visible || now - lastCheck < 80) return;
+                lastCheck = now;
+                var provider = view.ErrorProvider;
+                if (provider == null) return;
+                void Visit(Control parent)
+                {
+                    foreach (Control c in parent.Controls)
+                    {
+                        if (!string.IsNullOrEmpty(provider.GetError(c))) PlaceErrorMarker(provider, c);
+                        Visit(c);
+                    }
+                }
+                Visit(form);
+            };
+            Application.Idle += keepPlacement;
+            form.Disposed += (_, _) => Application.Idle -= keepPlacement;
+            form.VisibleChanged += (_, _) => Configure();
+            form.Layout += (_, _) => Configure();
+            form.DpiChangedAfterParent += (_, _) => Configure();
+            Configure();
+        }
+
         /// <summary>Apply the shared presentation once, retaining existing controls and event handlers.</summary>
         public static void Apply(Form form)
         {
             if (Styled.TryGetValue(form, out _)) { StyleTree(form); return; }
             Styled.Add(form, new object());
+            ConfigureErrorMarkers(form);
             if (ReflowRemainingObject(form))
             {
                 StyleTree(form);
@@ -922,6 +1000,26 @@ namespace Gurux.DLMS.UI
             if (includeActionColumn)
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             ConfigureCompactSurface(table);
+            // An auto-sized surface can keep a stale height after its rows change (for example when a value is
+            // read and a combo box or check box changes size), which cuts off the last row's bottom edge.
+            // Never let it be shorter than its rows need.
+            bool guarding = false;
+            void KeepRowsVisible()
+            {
+                if (guarding || table.IsDisposed) return;
+                guarding = true;
+                try
+                {
+                    // Measure without the previous floor so array/structure editors can shrink back to scalar rows.
+                    int minimumWidth = table.MinimumSize.Width;
+                    table.MinimumSize = new Size(minimumWidth, 0);
+                    int needed = table.GetPreferredSize(new Size(Math.Max(1, table.ClientSize.Width), 0)).Height;
+                    if (table.MinimumSize.Height != needed) table.MinimumSize = new Size(table.MinimumSize.Width, needed);
+                }
+                finally { guarding = false; }
+            }
+            table.Layout += (_, _) => KeepRowsVisible();
+            table.DpiChangedAfterParent += (_, _) => KeepRowsVisible();
             return table;
         }
 
@@ -1116,7 +1214,9 @@ namespace Gurux.DLMS.UI
                 name != "UpdateTimeBtn" && name != "CurrentTimeZoneBtn").ToArray();
             var actions = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                // Dock.Top, not Fill: a TableLayoutPanel with only AutoSize rows hands any extra height to its last row,
+                // so a Fill panel in a taller cell stretched the last button row (Preset Adjusting Time / Shift Time).
+                Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 2, RowCount = (actionNames.Length + 1) / 2, Margin = Padding.Empty,
                 Padding = Padding.Empty, BackColor = Color.Transparent
             };
@@ -1161,6 +1261,10 @@ namespace Gurux.DLMS.UI
                         for (int actionRow = 0; actionRow < actions.RowCount; ++actionRow)
                             actions.RowStyles.Add(new RowStyle(SizeType.AutoSize));
                     }
+                    // Fixed row heights: an AutoSize row takes the height of its Dock.Fill buttons, and a button grown once by
+                    // a transient taller layout would then keep the row tall (the stretched Preset Adjusting Time / Shift Time).
+                    int rowHeight = Math.Max(Scale(form, 40), buttons.Max(button => ButtonLayoutPolicy.GetPreferredSize(button).Height) + Scale(form, 8));
+                    foreach (RowStyle rowStyle in actions.RowStyles) { rowStyle.SizeType = SizeType.Absolute; rowStyle.Height = rowHeight; }
                     for (int i = 0; i < buttons.Length; ++i)
                     {
                         actions.SetCellPosition(buttons[i], new TableLayoutPanelCellPosition(i % columns, i / columns));

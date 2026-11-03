@@ -515,6 +515,15 @@ namespace Gurux.DLMS.UI
                         int width = Math.Max(1, table.ClientSize.Width - actions.Margin.Horizontal);
                         required += Math.Max(0, actions.GetPreferredSize(new Size(width, 0)).Height - Scale(parent, 40));
                     }
+                    if (parent is GroupBox group && table.Dock == DockStyle.Fill && group.Height > table.Height)
+                    {
+                        // The estimate above can come out a few pixels short after a DPI change or a value read,
+                        // which cuts off the bottom edge of the last row (the action buttons). Never size the
+                        // group smaller than its rows really need.
+                        int frame = group.Height - table.Height;
+                        int measured = table.GetPreferredSize(new Size(Math.Max(1, table.ClientSize.Width), 0)).Height + frame;
+                        if (measured > required) required = measured;
+                    }
                     if (parent is Form || parent is TabPage)
                     {
                         int available = Math.Max(1, parent.ClientSize.Height - parent.Padding.Vertical);

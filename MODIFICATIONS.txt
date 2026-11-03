@@ -168,3 +168,5 @@ ApplicationTypography now hides a closing modeless window, pauses its layout wor
 
 2026-11-01 - ModernPresentation.RoundTabs: shared public helper for rounded tab headers (previously private to the
   object editors). Headers are repainted over the native 3-D edges and the dotted focus cue is hidden until the keyboard is used.
+
+2026-11-03: Updated edited-value markers, dialog layouts and clock action rows; allow structured-data editors to shrink back to scalar size. GPL-2.0-only; original notices retained.

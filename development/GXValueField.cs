@@ -615,7 +615,7 @@ namespace Gurux.DLMS.UI
                 {
                     (Target as IGXDLMSBase).SetValue(new GXDLMSSettings(), v);
                 }
-                (this.ParentForm as IGXDLMSView).OnDirtyChange(Index, true);
+                GXDlmsUi.KeepMarkers(this.ParentForm as IGXDLMSView, () => (this.ParentForm as IGXDLMSView).OnDirtyChange(Index, true));
                 Target.UpdateDirty(Index, value);
             }
         }

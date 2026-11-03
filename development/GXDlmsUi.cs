@@ -294,10 +294,37 @@ namespace Gurux.DLMS.UI
             //If we want to show what properties are changed.
             if (view.ErrorProvider != null)
             {
-                view.ErrorProvider.Clear();
+                // Clear() forgets every marker, and UpdateDirty only marks GXValueFields. Markers the view set itself on
+                // other editors (drop-downs, text boxes, lists) would be lost on every refresh while their value is
+                // still unsaved, so keep them for as long as the edited value is.
+                var provider = view.ErrorProvider;
+                var kept = new System.Collections.Generic.List<KeyValuePair<Control, string>>();
+                void Collect(Control.ControlCollection controls)
+                {
+                    foreach (Control c in controls)
+                    {
+                        if (!(c is GXValueField))
+                        {
+                            string error = provider.GetError(c);
+                            if (!string.IsNullOrEmpty(error)) kept.Add(new KeyValuePair<Control, string>(c, error));
+                        }
+                        Collect(c.Controls);
+                    }
+                }
+                Collect(((Form)view).Controls);
+                provider.Clear();
                 foreach (int it in tmp.GetDirtyAttributeIndexes())
                 {
                     UpdateDirty(view, ((Form)view).Controls, tmp, it, true);
+                }
+                object ignored;
+                if (kept.Count != 0 && tmp.GetDirtyAttributeIndexes().Length != 0 && (index == 0 || tmp.GetDirty(index, out ignored)))
+                {
+                    foreach (var marker in kept)
+                    {
+                        ModernPresentation.PrepareErrorMarker(view, marker.Key);
+                        provider.SetError(marker.Key, marker.Value);
+                    }
                 }
             }
             //Update atribute values.
@@ -326,6 +353,38 @@ namespace Gurux.DLMS.UI
                     {
                         break;
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs a view callback that may clear the view's ErrorProvider (several views do in OnDirtyChange) and puts
+        /// back the "value changed" markers that were showing, so editing one field does not wipe the markers of the others.
+        /// </summary>
+        internal static void KeepMarkers(IGXDLMSView view, Action action)
+        {
+            var provider = view?.ErrorProvider;
+            var kept = new List<KeyValuePair<Control, string>>();
+            if (provider != null && view is Form form)
+            {
+                void Collect(Control.ControlCollection controls)
+                {
+                    foreach (Control c in controls)
+                    {
+                        string error = provider.GetError(c);
+                        if (!string.IsNullOrEmpty(error)) kept.Add(new KeyValuePair<Control, string>(c, error));
+                        Collect(c.Controls);
+                    }
+                }
+                Collect(form.Controls);
+            }
+            action();
+            foreach (var marker in kept)
+            {
+                if (string.IsNullOrEmpty(provider.GetError(marker.Key)) && !marker.Key.IsDisposed)
+                {
+                    ModernPresentation.PrepareErrorMarker(view, marker.Key);
+                    provider.SetError(marker.Key, marker.Value);
                 }
             }
         }

@@ -83,6 +83,12 @@ namespace Gurux.DLMS.UI
             SuspendLayout();
             var table = ModernPresentation.CompactSurface(this);
             ModernPresentation.CompactRow(table, label1.Text, FindTb);
+            // Keep the input one text line tall, whichever mode rows follow it.
+            if (FindTb.Parent is Panel findFrame)
+            {
+                findFrame.Dock = DockStyle.Top;
+                findFrame.Height = (int)(32 * DeviceDpi / 96f);
+            }
             label1.Visible = false;
             // Keep both original radio buttons in one group, including hidden modes.
             var modes = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown,
